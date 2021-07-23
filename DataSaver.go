@@ -3,26 +3,30 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type FileSaver struct {
 	TableName           string
 	ColumnStructMassive []ColumnStruct
+	MapOfData           map[int][]int64 `json:"-"`
 }
 
 // fileName, columnName
 type ColumnStruct struct {
 	ColumnName string
-	File       *os.File
-	OutStream  *bufio.Writer
+	File       *os.File      `json:"-"`
+	OutStream  *bufio.Writer `json:"-"`
 }
 
 func (fs *FileSaver) createStructure(fileName string) error {
 	// extract table name
 	fs.TableName = fileName[:len(fileName)-4]
+	fs.MapOfData = make(map[int][]int64)
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -45,20 +49,40 @@ func (fs *FileSaver) createStructure(fileName string) error {
 		if lineNum == 0 {
 			fs.initializeColumns(line)
 		} else {
-			fs.addDataLine(line)
+			fs.addDataLine(line, lineNum)
 		}
 	}
 
+	fs.createDataBaseMap()
 	fs.closeAllColumnConnections()
 
 	return nil
+}
+
+func (fs *FileSaver) createDataBaseMap() error {
+
+	data, err := json.Marshal(fs)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create("DataBaseMap")
+	if err != nil {
+		return err
+	}
+	writer := bufio.NewWriter(file)
+	_, err = writer.Write(data)
+
+	writer.Flush()
+	file.Close()
+	return err
 }
 
 func (fs *FileSaver) initializeColumns(columnNames []string) {
 
 	for _, columnName := range columnNames {
 		col := ColumnStruct{}
-		col.creatColumnsStruct(columnName)
+		col.creatColumnsStruct(fs.TableName + "_" + columnName)
 		fs.ColumnStructMassive = append(fs.ColumnStructMassive, col)
 	}
 }
@@ -70,11 +94,17 @@ func (fs *FileSaver) closeAllColumnConnections() {
 	}
 }
 
-func (fs *FileSaver) addDataLine(lineOfData []string) {
+func (fs *FileSaver) addDataLine(lineOfData []string, index int) {
 
 	for i, columnName := range lineOfData {
-		fs.ColumnStructMassive[i].addData(columnName)
+		writeInd, _ := fs.ColumnStructMassive[i].addData(columnName, index)
+
+		fs.MapOfData[index] = append(fs.MapOfData[index], writeInd)
 	}
+
+	// TODO
+	//fs.MapOfData[index] = append(fs.MapOfData[index], writeIndexes)
+
 }
 
 /*
@@ -94,7 +124,12 @@ func (columnStruct *ColumnStruct) creatColumnsStruct(columnName string) error {
 	return nil
 }
 
-func (columnStruct *ColumnStruct) addData(data string) error {
-	_, err := columnStruct.OutStream.WriteString(data + ",")
-	return err
+func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error) {
+	fi, err := columnStruct.File.Stat()
+	if err != nil {
+		// Could not obtain stat, handle error
+	}
+	writeInd := fi.Size() + int64(columnStruct.OutStream.Available())
+	_, err = columnStruct.OutStream.WriteString(strconv.Itoa(index) + ")" + data + ",")
+	return writeInd, err
 }
