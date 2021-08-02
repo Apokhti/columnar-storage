@@ -23,7 +23,7 @@ type ColumnStruct struct {
 	OutStream  *bufio.Writer `json:"-"`
 }
 
-func (fs *FileSaver) createStructure(fileName string) error {
+func (fs *FileSaver) CreateStructure(fileName string) error {
 	// extract table name
 	fs.TableName = fileName[:len(fileName)-4]
 	fs.MapOfData = make(map[int][]int64)

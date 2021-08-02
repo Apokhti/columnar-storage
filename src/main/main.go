@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/Apokhti/cs/src/main/manager"
 )
 
 func getFileName() string {
@@ -15,8 +17,8 @@ func getFileName() string {
 
 func readCSV(fileName string) {
 	fmt.Println("reading file", fileName)
-	fs := FileSaver{}
-	fs.createStructure(fileName)
+	fs := manager.FileSaver{}
+	fs.CreateStructure(fileName)
 }
 
 func main() {

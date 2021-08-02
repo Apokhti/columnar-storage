@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"main/query"
+	"github.com/Apokhti/cs/src/main/query"
 )
 
 func Parse(tokenizer *Tokenizer) (query.Query, error) {
