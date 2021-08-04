@@ -3,120 +3,88 @@ package parser
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Apokhti/cs/src/main/query"
 )
 
-type Tokenizer struct {
-	index     int
-	lastChar  uint16
-	LastToken string
-	ST        string
+func Parse(tokenizer *Tokenizer) (query.Query, error) {
+	q, err := (&parser{tokenizer, stepType, query.Query{}, nil}).parse()
+	return q, err
 }
 
-const SYMBOLS = "[{}().,;+-*/&|<>=~]"
+type step int
 
-// Returns if character is digit
-func isBlank(ch uint16) bool {
-	return ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t'
+const (
+	stepType step = iota
+
+	stepSelectExpression
+	stepSelectMainTable
+
+	stepEnd
+)
+
+type parser struct {
+	tokenizer *Tokenizer
+	step      step
+	query     query.Query
+	err       error
 }
 
-// Returns if character is digit
-func isDigit(ch uint16) bool {
-	return '0' <= ch && ch <= '9'
+func (p *parser) parse() (query.Query, error) {
+	q, err := p.parseQuery()
+	p.err = err
+	return q, p.err
 }
 
-// Returns if character is letter
-func isLetter(ch uint16) bool {
-	return 'A' <= ch && ch <= 'Z' || 'a' <= ch && ch <= 'z'
-}
+func (p *parser) parseQuery() (query.Query, error) {
 
-// Returns if character is letter
-func isSymbol(ch uint16) bool {
-	return strings.Contains(SYMBOLS, string(ch))
-}
+	currentExpresion := query.Expression{}
 
-// Main sql keywords
-func isKeyword(st string) bool {
-	st = strings.ToLower(st)
-	return st == "select" || st == "where" || st == "inner" || st == "outer" || st == "join" || st == "groupby"
-}
+	for {
+		switch p.step {
+		case stepType:
+			switch strings.ToUpper(p.peekNextToken()) {
+			case "SELECT":
+				p.query.QueryType = query.Select
+				p.step = stepSelectExpression
+			default:
+				return p.query, fmt.Errorf("invalid query type")
+			}
+		case stepSelectExpression:
 
-// moves to next character of tokenizr
-func (tkn *Tokenizer) next() {
-	tkn.index += 1
-}
+			token := p.peekNextToken()
 
-// top
-func (tkn *Tokenizer) top() uint16 {
-	if tkn.index >= len(tkn.ST) {
-		return 0
-	}
-	return uint16(tkn.ST[tkn.index])
-}
+			if strings.ToUpper(token) == "FROM" {
+				p.step = stepSelectMainTable
+				p.query.ExpressionsList = append(p.query.ExpressionsList, currentExpresion)
+				currentExpresion = query.Expression{}
+				continue
+			} else if strings.ToUpper(token) == "," {
+				p.step = stepSelectExpression
+				p.query.ExpressionsList = append(p.query.ExpressionsList, currentExpresion)
+				currentExpresion = query.Expression{}
+				continue
+			} else {
+				query.AddValueToExpression(&currentExpresion, token)
+			}
+			p.step = stepSelectExpression
+		case stepSelectMainTable:
+			table := p.peekNextToken()
 
-// peek
-func (tkn *Tokenizer) peek() uint16 {
-	if tkn.index+1 >= len(tkn.ST) {
-		return 0
-	}
-	return uint16(tkn.ST[tkn.index+1])
-}
+			if len(table) == 0 {
+				return p.query, fmt.Errorf("expected table name")
+			}
+			p.query.Table = table
+			p.step = stepEnd
 
-// returns next token
-func (tkn *Tokenizer) nextToken() string {
-	curToken := ""
-
-	// Skip over blank
-	curChar := tkn.top()
-	for isBlank(curChar) {
-		tkn.next()
-		curChar = tkn.top()
-		if curChar == 0 {
-			return curToken
+		case stepEnd:
+			//TODO update this part
+			return p.query, nil
 		}
 	}
-	if isSymbol(curChar) {
-		tkn.next()
-		return string(curChar)
-	}
-	for true {
-		if curChar == 0 || isBlank(curChar) {
-			return curToken
-		}
-
-		curToken += string(curChar)
-
-		nextChar := tkn.peek()
-		if isBlank(nextChar) || isSymbol(nextChar) {
-			tkn.next()
-			return curToken
-		}
-
-		tkn.next()
-		curChar = tkn.top()
-	}
-
-	return curToken
 }
 
-// returns new tokenizer
-func NewTokenizer(st string) *Tokenizer {
-	return &Tokenizer{index: 0, lastChar: 0, LastToken: "", ST: st}
-}
-
-func main() {
-	strToTokenize := "SELECT (a + 2) *5 + c , b FROM tbl"
-
-	toke2 := NewTokenizer(strToTokenize)
-
-	pts, err := Parse(toke2)
-
-	// SELECT  a + b, c FROM user
-	fmt.Println(err)
-	fmt.Printf((pts.Table) + "\n")
-	for _, element := range pts.ExpressionsList {
-		// element is the element from someSlice for where we are
-		fmt.Printf("\n" + (element.Fullexpression) + "\n")
-		fmt.Println(strings.Join(element.ExpressionColumns, ": ") + "\n")
-	}
-
+func (p *parser) peekNextToken() string {
+	tk := p.tokenizer.nextToken()
+	return tk
 }
