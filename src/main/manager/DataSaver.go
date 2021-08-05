@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -21,11 +22,12 @@ type ColumnStruct struct {
 	ColumnName string
 	File       *os.File      `json:"-"`
 	OutStream  *bufio.Writer `json:"-"`
+	ReadStram  *bufio.Reader `json:"-"`
 }
 
 func (fs *FileSaver) CreateStructure(fileName string) error {
 	// extract table name
-	fs.TableName = fileName[:len(fileName)-4]
+	fs.TableName = filepath.Base(fileName[:len(fileName)-4])
 	fs.MapOfData = make(map[int][]int64)
 
 	file, err := os.Open(fileName)
@@ -66,7 +68,7 @@ func (fs *FileSaver) createDataBaseMap() error {
 		return err
 	}
 
-	file, err := os.Create("DataBaseMap")
+	file, err := os.Create("DataBaseMap.json")
 	if err != nil {
 		return err
 	}
@@ -100,6 +102,7 @@ func (fs *FileSaver) addDataLine(lineOfData []string, index int) {
 		writeInd, _ := fs.ColumnStructMassive[i].addData(columnName, index)
 
 		fs.MapOfData[index] = append(fs.MapOfData[index], writeInd)
+
 	}
 
 	// TODO
@@ -114,6 +117,7 @@ func (fs *FileSaver) addDataLine(lineOfData []string, index int) {
 func (columnStruct *ColumnStruct) creatColumnsStruct(columnName string) error {
 
 	columnStruct.ColumnName = columnName
+	fmt.Println(columnName)
 	file, err := os.Create(columnName)
 	if err != nil {
 		return err

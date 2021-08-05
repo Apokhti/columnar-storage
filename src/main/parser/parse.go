@@ -7,7 +7,9 @@ import (
 	"github.com/Apokhti/cs/src/main/query"
 )
 
-func Parse(tokenizer *Tokenizer) (query.Query, error) {
+func Parse(queryTxt string) (query.Query, error) {
+
+	tokenizer := NewTokenizer(queryTxt)
 	q, err := (&parser{tokenizer, stepType, query.Query{}, nil}).parse()
 	return q, err
 }
