@@ -67,7 +67,7 @@ func getCommand() string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(`Choose action
 		1: add Csv File
-		2: write Querry
+		2: write Query
 		`)
 	command, _ := reader.ReadString('\n')
 	command = command[:len(command)-1]

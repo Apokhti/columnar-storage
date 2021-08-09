@@ -41,3 +41,6 @@
 
 # custom ignores
 m
+data/
+main
+*__debug_bin
