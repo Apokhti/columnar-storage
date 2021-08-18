@@ -31,7 +31,7 @@ func columnGetter(fs *FileSaver, columns []string) map[int]map[string]string {
 		for colIndex, col := range fs.ColumnStructMassive {
 
 			if col.ReadStram == nil {
-				file, err := os.Open("myFile_email")
+				file, err := os.Open(col.ColumnName)
 				if err != nil {
 					println(err)
 					return nil
@@ -49,12 +49,13 @@ func columnGetter(fs *FileSaver, columns []string) map[int]map[string]string {
 				endInd = fs.MapOfData[index+1][colIndex]
 			}
 
-			println("St:", startInd, " en:", endInd)
-
 			println(col.File.Name())
 			col.File.Seek(startInd, 0)
-			b4, _ := col.ReadStram.Peek(int(startInd - endInd))
-			fmt.Printf("5 bytes: %s\n", string(b4))
+			b4, _ := col.ReadStram.Peek(int(endInd - startInd))
+			println("ColumnName:", col.ColumnName)
+			fmt.Println("index:", index)
+			fmt.Printf("col.ColumnName: %s\n", string(b4))
+			fmt.Println("")
 
 			row[col.ColumnName] = string(b4)
 
