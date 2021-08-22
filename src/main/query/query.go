@@ -7,9 +7,11 @@ import (
 const SYMBOLS = "[{}().,;+-*/&|<>=~]"
 
 type Query struct {
-	QueryType       QueryType
-	Table           string
-	ExpressionsList []Expression
+	QueryType             QueryType
+	Table                 string
+	SelectExpressionsList []Expression
+	WhereExpressionList   []Expression
+	OrderBy               string
 }
 
 type QueryType int

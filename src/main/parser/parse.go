@@ -21,7 +21,11 @@ const (
 
 	stepSelectExpression
 	stepSelectMainTable
-
+	stepAfterTable
+	stepWhere
+	stepWhereExpression
+	stepOrderby
+	stepOrderbyExpression
 	stepEnd
 )
 
@@ -45,12 +49,9 @@ func (p *parser) parseQuery() (query.Query, error) {
 	for {
 		switch p.step {
 		case stepType:
-			switch strings.ToUpper(p.peekNextToken()) {
-			case "SELECT":
-				p.query.QueryType = query.Select
-				p.step = stepSelectExpression
-			default:
-				return p.query, fmt.Errorf("invalid query type")
+			toReturn := p.handleType()
+			if toReturn {
+				return p.query, fmt.Errorf("WRONG TYPE")
 			}
 		case stepSelectExpression:
 
@@ -58,12 +59,12 @@ func (p *parser) parseQuery() (query.Query, error) {
 
 			if strings.ToUpper(token) == "FROM" {
 				p.step = stepSelectMainTable
-				p.query.ExpressionsList = append(p.query.ExpressionsList, currentExpresion)
+				p.query.SelectExpressionsList = append(p.query.SelectExpressionsList, currentExpresion)
 				currentExpresion = query.Expression{}
 				continue
 			} else if strings.ToUpper(token) == "," {
 				p.step = stepSelectExpression
-				p.query.ExpressionsList = append(p.query.ExpressionsList, currentExpresion)
+				p.query.SelectExpressionsList = append(p.query.SelectExpressionsList, currentExpresion)
 				currentExpresion = query.Expression{}
 				continue
 			} else {
@@ -78,7 +79,28 @@ func (p *parser) parseQuery() (query.Query, error) {
 			}
 			p.query.Table = table
 			p.step = stepEnd
-
+		case stepAfterTable:
+			token := p.peekNextToken()
+			switch token {
+			case ";":
+				p.step = stepWhereExpression
+			default:
+				p.step = stepEnd
+			}
+		case stepWhere:
+			fmt.Printf("WHERE")
+			currentExpresion = query.Expression{}
+			p.step = stepWhereExpression
+		case stepWhereExpression:
+			fmt.Printf("WHERE EXPRESSION")
+			token := p.peekNextToken()
+			query.AddValueToExpression(&currentExpresion, token)
+			p.step = stepEnd
+		case stepOrderby:
+			fmt.Printf("Order by")
+		case stepOrderbyExpression:
+			token := p.peekNextToken()
+			fmt.Printf(token)
 		case stepEnd:
 			//TODO update this part
 			return p.query, nil
@@ -86,7 +108,28 @@ func (p *parser) parseQuery() (query.Query, error) {
 	}
 }
 
+func (p *parser) handleType() bool {
+	token := p.peekNextToken()
+	switch token {
+	case "select":
+		p.query.QueryType = query.Select
+		p.step = stepSelectExpression
+		return false
+	default:
+		return true
+	}
+}
+
+func (p *parser) handleWhereExpression() {
+	return
+}
+
+// Parses and handles select
+func (p *parser) handleSelectExpression() {
+	return
+}
+
+// Returns next token
 func (p *parser) peekNextToken() string {
-	tk := p.tokenizer.nextToken()
-	return tk
+	return p.tokenizer.nextToken()
 }

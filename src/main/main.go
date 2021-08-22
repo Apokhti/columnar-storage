@@ -76,13 +76,23 @@ func getCommand() string {
 
 func main() {
 	fs = manager.FileSaver{}
-	for {
-		command := getCommand()
-		if command == "1" {
-			inputCSV()
-		} else if command == "2" {
-			inputQuerry()
-		}
+	query := "select bla from bla"
+	pts, err := parser.Parse(query)
 
+	if err != nil {
+		fmt.Println("parser error ", err)
+		return
 	}
+	println(&pts)
+	data := manager.QuerryExecutor(&fs, &pts)
+	println(data)
+	// for {
+	// 	command := getCommand()
+	// 	if command == "1" {
+	// 		inputCSV()
+	// 	} else if command == "2" {
+	// 		inputQuerry()
+	// 	}
+
+	// }
 }
