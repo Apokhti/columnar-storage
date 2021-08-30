@@ -133,7 +133,7 @@ func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error)
 	if err != nil {
 		// Could not obtain stat, handle error
 	}
-	writeInd := fi.Size() + int64(columnStruct.OutStream.Available())
+	writeInd := fi.Size() + int64(columnStruct.OutStream.Buffered())
 	_, err = columnStruct.OutStream.WriteString(strconv.Itoa(index) + ")" + data + ",")
 	return writeInd, err
 }

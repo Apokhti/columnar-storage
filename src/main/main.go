@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/Apokhti/cs/src/main/manager"
 	"github.com/Apokhti/cs/src/main/parser"
@@ -52,8 +53,14 @@ func readCSV(fileName string) {
 		fmt.Println("ColumnStructMassive", ":", value.ColumnName)
 	}
 
-	for key, value := range fs.MapOfData {
-		fmt.Println("Key:", key, "Value:", value)
+	keys := make([]int, 0)
+	for k, _ := range fs.MapOfData {
+		keys = append(keys, k)
+	}
+
+	sort.Ints(keys)
+	for _, k := range keys {
+		fmt.Println("Key:", k, "Value:", fs.MapOfData[k])
 	}
 
 }
