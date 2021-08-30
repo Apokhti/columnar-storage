@@ -11,9 +11,12 @@ import (
 	"strconv"
 )
 
+const DATA_FILE_PATH = "data/"
+
 type FileSaver struct {
 	TableName           string
 	ColumnStructMassive []ColumnStruct
+	TableSpaceDir       string          `json:"-"`
 	MapOfData           map[int][]int64 `json:"-"`
 }
 
@@ -34,6 +37,12 @@ func (fs *FileSaver) CreateStructure(fileName string) error {
 	if err != nil {
 		fmt.Println("Error openning file ", fileName, err)
 		return err
+	}
+
+	fs.TableSpaceDir = DATA_FILE_PATH + "/" + fs.TableName
+	err = os.MkdirAll(fs.TableSpaceDir, os.ModePerm)
+	if err != nil {
+		fmt.Printf("Can not create Table space %v", fs.TableName)
 	}
 
 	csvReader := csv.NewReader(file)
@@ -68,7 +77,7 @@ func (fs *FileSaver) createDataBaseMap() error {
 		return err
 	}
 
-	file, err := os.Create("DataBaseMap.json")
+	file, err := os.Create(DATA_FILE_PATH + "/" + fs.TableName + "/DataBaseMap.json")
 	if err != nil {
 		return err
 	}
@@ -84,7 +93,7 @@ func (fs *FileSaver) initializeColumns(columnNames []string) {
 
 	for _, columnName := range columnNames {
 		col := ColumnStruct{}
-		col.creatColumnsStruct(fs.TableName + "_" + columnName)
+		col.creatColumnsStruct(DATA_FILE_PATH+"/"+fs.TableName+"/"+columnName, fs.TableName+"_"+columnName)
 		fs.ColumnStructMassive = append(fs.ColumnStructMassive, col)
 	}
 }
@@ -114,11 +123,11 @@ func (fs *FileSaver) addDataLine(lineOfData []string, index int) {
 //	columnName = tableName + _ + columnName
 //
 */
-func (columnStruct *ColumnStruct) creatColumnsStruct(columnName string) error {
+func (columnStruct *ColumnStruct) creatColumnsStruct(columnSaveFilePath string, columnName string) error {
 
 	columnStruct.ColumnName = columnName
 	fmt.Println(columnName)
-	file, err := os.Create(columnName)
+	file, err := os.Create(columnSaveFilePath)
 	if err != nil {
 		return err
 	}

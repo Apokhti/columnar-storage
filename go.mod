@@ -1,3 +1,3 @@
-module github.com/Apokhti/cs
+module cs
 
 go 1.16

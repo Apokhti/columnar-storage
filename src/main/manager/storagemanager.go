@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Apokhti/cs/src/main/query"
+	"cs/src/main/query"
 )
 
 func QuerryExecutor(fs *FileSaver, query *query.Query) map[int]map[string]string {

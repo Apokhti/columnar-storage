@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Apokhti/cs/src/main/query"
+	"cs/src/main/query"
 )
 
 func Parse(queryTxt string) (query.Query, error) {

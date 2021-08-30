@@ -6,8 +6,8 @@ import (
 	"os"
 	"sort"
 
-	"github.com/Apokhti/cs/src/main/manager"
-	"github.com/Apokhti/cs/src/main/parser"
+	"cs/src/main/manager"
+	"cs/src/main/parser"
 )
 
 var fs manager.FileSaver
@@ -66,19 +66,20 @@ func readCSV(fileName string) {
 }
 
 func inputCSV() {
-	fileName := getFileName()
-	readCSV(fileName[:len(fileName)-1])
+	fileName := "src/resources/myFile.csv" //getFileName()
+	readCSV(fileName)
 }
 
 func getCommand() string {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(`Choose action
-		1: add Csv File
-		2: write Query
-		`)
-	command, _ := reader.ReadString('\n')
-	command = command[:len(command)-1]
-	return command
+	return "1"
+	// reader := bufio.NewReader(os.Stdin)
+	// fmt.Print(`Choose action
+	// 	1: add Csv File
+	// 	2: write Query
+	// 	`)
+	// command, _ := reader.ReadString('\n')
+	// command = command[:len(command)-1]
+	// return command
 }
 
 func main() {
@@ -90,6 +91,6 @@ func main() {
 		} else if command == "2" {
 			inputQuerry()
 		}
-
+		break
 	}
 }
