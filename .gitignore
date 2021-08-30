@@ -40,7 +40,6 @@
 .ionide
 
 # custom ignores
-m
 data/
-main
+/main
 *__debug_bin

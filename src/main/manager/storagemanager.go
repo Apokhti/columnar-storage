@@ -8,7 +8,7 @@ import (
 	"cs/src/main/query"
 )
 
-func QuerryExecutor(fs *FileSaver, query *query.Query) map[int]map[string]string {
+func QuerryExecutor(fs *TableData, query *query.Query) map[int]map[string]string {
 
 	columns := map[string]bool{}
 
@@ -25,14 +25,14 @@ func QuerryExecutor(fs *FileSaver, query *query.Query) map[int]map[string]string
 
 // gets data from startIndex to endIndex,
 // reads columns which are in columns
-func getColumnsbetweenIndexes(startIndex int, endIndex int, fs *FileSaver, columns map[string]bool) map[int]map[string]string {
+func getColumnsbetweenIndexes(startIndex int, endIndex int, fs *TableData, columns map[string]bool) map[int]map[string]string {
 
 	data := make(map[int]map[string]string)
 
 	for index := startIndex; index <= endIndex; index++ {
 
 		row := make(map[string]string)
-		for colIndex, col := range fs.ColumnStructMassive {
+		for colIndex, col := range fs.Columns {
 
 			if columns[col.ColumnName] {
 				if col.ReadStram == nil {
