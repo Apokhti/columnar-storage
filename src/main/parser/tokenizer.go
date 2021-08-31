@@ -31,7 +31,7 @@ func isLetter(ch uint16) bool {
 
 // Returns if character is letter
 func isSymbol(ch uint16) bool {
-	return strings.Contains(SYMBOLS, string(ch))
+	return strings.Contains(SYMBOLS, fmt.Sprintf("%v", ch))
 }
 
 // Main sql keywords
@@ -76,14 +76,14 @@ func (tkn *Tokenizer) nextToken() string {
 	}
 	if isSymbol(curChar) {
 		tkn.next()
-		return string(curChar)
+		return fmt.Sprintf("%v", curChar)
 	}
 	for true {
 		if curChar == 0 || isBlank(curChar) {
 			return curToken
 		}
 
-		curToken += string(curChar)
+		curToken += fmt.Sprintf("%v", curChar)
 
 		nextChar := tkn.peek()
 		if isBlank(nextChar) || isSymbol(nextChar) {

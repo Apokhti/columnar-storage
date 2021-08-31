@@ -7,30 +7,32 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
 const DATA_FILE_PATH = "data/"
 
-type FileSaver struct {
-	TableName           string
-	ColumnStructMassive []ColumnStruct
-	TableSpaceDir       string          `json:"-"`
-	MapOfData           map[int][]int64 `json:"-"`
+type TableData struct {
+	TableName     string
+	TableDirPath  string
+	Columns       []ColumnStruct
+	TableSpaceDir string          `json:"-"`
+	MapOfData     map[int][]int64 `json:"-"`
 }
 
 // fileName, columnName
 type ColumnStruct struct {
-	ColumnName string
-	File       *os.File      `json:"-"`
-	OutStream  *bufio.Writer `json:"-"`
-	ReadStram  *bufio.Reader `json:"-"`
+	ColumnName     string
+	ColumnFilePath string
+	Type           string
+	File           *os.File      `json:"-"`
+	OutStream      *bufio.Writer `json:"-"`
+	ReadStram      *bufio.Reader `json:"-"`
 }
 
-func (fs *FileSaver) CreateStructure(fileName string) error {
+func (fs *TableData) CreateStructure(tableName, fileName string) error {
 	// extract table name
-	fs.TableName = filepath.Base(fileName[:len(fileName)-4])
+	fs.TableName = tableName
 	fs.MapOfData = make(map[int][]int64)
 
 	file, err := os.Open(fileName)
@@ -70,7 +72,7 @@ func (fs *FileSaver) CreateStructure(fileName string) error {
 	return nil
 }
 
-func (fs *FileSaver) createDataBaseMap() error {
+func (fs *TableData) createDataBaseMap() error {
 
 	data, err := json.Marshal(fs)
 	if err != nil {
@@ -89,26 +91,26 @@ func (fs *FileSaver) createDataBaseMap() error {
 	return err
 }
 
-func (fs *FileSaver) initializeColumns(columnNames []string) {
+func (fs *TableData) initializeColumns(columnNames []string) {
 
 	for _, columnName := range columnNames {
 		col := ColumnStruct{}
 		col.creatColumnsStruct(DATA_FILE_PATH+"/"+fs.TableName+"/"+columnName, fs.TableName+"_"+columnName)
-		fs.ColumnStructMassive = append(fs.ColumnStructMassive, col)
+		fs.Columns = append(fs.Columns, col)
 	}
 }
 
-func (fs *FileSaver) closeAllColumnConnections() {
-	for i := range fs.ColumnStructMassive {
-		fs.ColumnStructMassive[i].OutStream.Flush()
-		fs.ColumnStructMassive[i].File.Close()
+func (fs *TableData) closeAllColumnConnections() {
+	for i := range fs.Columns {
+		fs.Columns[i].OutStream.Flush()
+		fs.Columns[i].File.Close()
 	}
 }
 
-func (fs *FileSaver) addDataLine(lineOfData []string, index int) {
+func (fs *TableData) addDataLine(lineOfData []string, index int) {
 
 	for i, columnName := range lineOfData {
-		writeInd, _ := fs.ColumnStructMassive[i].addData(columnName, index)
+		writeInd, _ := fs.Columns[i].addData(columnName, index)
 
 		fs.MapOfData[index] = append(fs.MapOfData[index], writeInd)
 
@@ -140,7 +142,7 @@ func (columnStruct *ColumnStruct) creatColumnsStruct(columnSaveFilePath string, 
 func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error) {
 	fi, err := columnStruct.File.Stat()
 	if err != nil {
-		// Could not obtain stat, handle error
+		return -1, err
 	}
 	writeInd := fi.Size() + int64(columnStruct.OutStream.Buffered())
 	_, err = columnStruct.OutStream.WriteString(strconv.Itoa(index) + ")" + data + ",")

@@ -10,7 +10,7 @@ import (
 	"cs/src/main/parser"
 )
 
-var fs manager.FileSaver
+var fs manager.TableData
 
 func getQuerry() string {
 	reader := bufio.NewReader(os.Stdin)
@@ -46,15 +46,15 @@ func getFileName() string {
 func readCSV(fileName string) {
 	fmt.Println("reading file", fileName)
 
-	fs.CreateStructure(fileName)
+	fs.CreateStructure("myFile", fileName)
 	fmt.Println("TableName: " + fs.TableName)
 
-	for _, value := range fs.ColumnStructMassive {
+	for _, value := range fs.Columns {
 		fmt.Println("ColumnStructMassive", ":", value.ColumnName)
 	}
 
 	keys := make([]int, 0)
-	for k, _ := range fs.MapOfData {
+	for k := range fs.MapOfData {
 		keys = append(keys, k)
 	}
 

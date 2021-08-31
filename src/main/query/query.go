@@ -34,7 +34,7 @@ func isDigit(ch uint16) bool {
 
 // Returns if character is letter
 func isSymbol(ch uint16) bool {
-	return strings.Contains(SYMBOLS, string(ch))
+	return strings.Contains(SYMBOLS, fmt.Sprintf("%v", ch))
 }
 
 // checks if its expression
