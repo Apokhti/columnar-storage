@@ -12,7 +12,7 @@ func QuerryExecutor(fs *FileSaver, query *query.Query) map[int]map[string]string
 
 	columns := map[string]bool{}
 
-	for _, element := range query.ExpressionsList {
+	for _, element := range query.SelectExpressionsList {
 		for _, el := range element.ExpressionColumns {
 			columns[query.Table+"_"+el] = true
 		}

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -100,4 +101,15 @@ func (tkn *Tokenizer) nextToken() string {
 // returns new tokenizer
 func NewTokenizer(st string) *Tokenizer {
 	return &Tokenizer{index: 0, lastChar: 0, LastToken: "", ST: st}
+}
+
+func PrintTokens(st string) {
+	tokenizer := NewTokenizer(st)
+	for {
+		tok := tokenizer.nextToken()
+		if tok == "" {
+			break
+		}
+		fmt.Printf("%s\n", tok)
+	}
 }

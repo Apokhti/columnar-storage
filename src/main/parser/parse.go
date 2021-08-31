@@ -21,7 +21,8 @@ const (
 
 	stepSelectExpression
 	stepSelectMainTable
-
+	stepWhereExpression
+	stepOrderbyExpression
 	stepEnd
 )
 
@@ -43,13 +44,13 @@ func (p *parser) parseQuery() (query.Query, error) {
 	currentExpresion := query.Expression{}
 
 	for {
+		fmt.Printf("%n", p.step)
 		switch p.step {
 		case stepType:
-			switch strings.ToUpper(p.peekNextToken()) {
-			case "SELECT":
+			if strings.ToUpper(p.peekNextToken()) == "SELECT" {
 				p.query.QueryType = query.Select
 				p.step = stepSelectExpression
-			default:
+			} else {
 				return p.query, fmt.Errorf("invalid query type")
 			}
 		case stepSelectExpression:
@@ -58,18 +59,14 @@ func (p *parser) parseQuery() (query.Query, error) {
 
 			if strings.ToUpper(token) == "FROM" {
 				p.step = stepSelectMainTable
-				p.query.ExpressionsList = append(p.query.ExpressionsList, currentExpresion)
+				p.query.SelectExpressionsList = append(p.query.SelectExpressionsList, currentExpresion)
 				currentExpresion = query.Expression{}
-				continue
 			} else if strings.ToUpper(token) == "," {
-				p.step = stepSelectExpression
-				p.query.ExpressionsList = append(p.query.ExpressionsList, currentExpresion)
+				p.query.SelectExpressionsList = append(p.query.SelectExpressionsList, currentExpresion)
 				currentExpresion = query.Expression{}
-				continue
 			} else {
 				query.AddValueToExpression(&currentExpresion, token)
 			}
-			p.step = stepSelectExpression
 		case stepSelectMainTable:
 			table := p.peekNextToken()
 
@@ -77,11 +74,44 @@ func (p *parser) parseQuery() (query.Query, error) {
 				return p.query, fmt.Errorf("expected table name")
 			}
 			p.query.Table = table
-			p.step = stepEnd
+			token := p.peekNextToken()
+			if strings.ToUpper(token) == "WHERE" {
+				p.step = stepWhereExpression
+			} else {
+				p.step = stepEnd
+			}
+		case stepWhereExpression:
+			token := p.peekNextToken()
+			if strings.ToUpper(token) == "ORDER" {
+				p.peekNextToken()
+				p.step = stepOrderbyExpression
+				p.query.WhereExpressionList = append(p.query.WhereExpressionList, currentExpresion)
+				currentExpresion = query.Expression{}
+			} else if strings.ToUpper(token) == "AND" {
+				p.query.WhereExpressionList = append(p.query.WhereExpressionList, currentExpresion)
+				currentExpresion = query.Expression{}
+			} else if strings.ToUpper(token) == ";" {
+				p.step = stepEnd
+			} else {
+				query.AddValueToExpression(&currentExpresion, token)
+			}
 
+		case stepOrderbyExpression:
+			token := p.peekNextToken()
+			if strings.ToUpper(token) == ";" {
+				p.query.Orderby = append(p.query.Orderby, currentExpresion)
+				p.step = stepEnd
+			} else if strings.ToUpper(token) == "," {
+				p.query.Orderby = append(p.query.Orderby, currentExpresion)
+				currentExpresion = query.Expression{}
+			} else {
+				query.AddValueToExpression(&currentExpresion, token)
+
+			}
 		case stepEnd:
 			//TODO update this part
 			return p.query, nil
+
 		}
 	}
 }
