@@ -44,7 +44,6 @@ func (p *parser) parseQuery() (query.Query, error) {
 	currentExpresion := query.Expression{}
 
 	for {
-		fmt.Printf("%n", p.step)
 		switch p.step {
 		case stepType:
 			if strings.ToUpper(p.peekNextToken()) == "SELECT" {
