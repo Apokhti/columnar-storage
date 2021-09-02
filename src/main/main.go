@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"cs/src/main/manager"
-	"cs/src/main/parser"
 )
 
 var fs manager.TableData
@@ -20,20 +19,20 @@ func getQuerry() string {
 }
 
 func inputQuerry() {
-	querry := getQuerry()
-	querry = querry[:len(querry)-1]
-	fmt.Println(querry)
+	// querry := getQuerry()
+	// querry = querry[:len(querry)-1]
+	// fmt.Println(querry)
 
-	pts, err := parser.Parse(querry)
+	// pts, err := parser.Parse(querry)
 
-	if err != nil {
-		fmt.Println("parser error ", err)
-		return
-	}
+	// if err != nil {
+	// 	fmt.Println("parser error ", err)
+	// 	return
+	// }
 
-	data := manager.QuerryExecutor(&fs, &pts)
+	// data := manager.QuerryExecutor(&fs, &pts)
 
-	println(data)
+	// println(data)
 }
 
 func getFileName() string {

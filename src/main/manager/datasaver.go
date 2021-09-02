@@ -2,22 +2,32 @@ package manager
 
 import (
 	"bufio"
+	"cs/src/main/utils"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 )
 
 const DATA_FILE_PATH = "data/"
 
+type SingleValue struct {
+	VirtualId int64
+	Value     interface{}
+}
+
 type TableData struct {
-	TableName     string
-	TableDirPath  string
-	Columns       []ColumnStruct
-	TableSpaceDir string          `json:"-"`
-	MapOfData     map[int][]int64 `json:"-"`
+	TableName    string
+	TableDirPath string
+	Indexes      []IndexData
+	Columns      []ColumnStruct
+	MapOfData    map[int][]int64 `json:"-"`
+}
+
+type IndexData struct {
+	IndexDirPath    string
+	IndexColumnName string
 }
 
 // fileName, columnName
@@ -30,22 +40,17 @@ type ColumnStruct struct {
 	ReadStram      *bufio.Reader `json:"-"`
 }
 
-func (fs *TableData) CreateStructure(tableName, fileName string) error {
-	// extract table name
+func (fs *TableData) CreateStructure(tableName, filePath string) error {
 	fs.TableName = tableName
 	fs.MapOfData = make(map[int][]int64)
 
-	file, err := os.Open(fileName)
+	file, err := os.Open(filePath)
 	if err != nil {
-		fmt.Println("Error openning file ", fileName, err)
+		fmt.Println("Error openning file ", filePath, err)
 		return err
 	}
 
-	fs.TableSpaceDir = DATA_FILE_PATH + "/" + fs.TableName
-	err = os.MkdirAll(fs.TableSpaceDir, os.ModePerm)
-	if err != nil {
-		fmt.Printf("Can not create Table space %v", fs.TableName)
-	}
+	fs.TableDirPath = DATA_FILE_PATH + "/" + fs.TableName + "/"
 
 	csvReader := csv.NewReader(file)
 	if csvReader == nil {
@@ -54,20 +59,26 @@ func (fs *TableData) CreateStructure(tableName, fileName string) error {
 	}
 
 	for lineNum := 0; ; lineNum++ {
+		var err error = nil
 		line, err := csvReader.Read()
 		if err != nil {
 			break
 		}
 
 		if lineNum == 0 {
-			fs.initializeColumns(line)
+			err = fs.initializeColumns(line)
 		} else {
-			fs.addDataLine(line, lineNum)
+			err = fs.addDataLine(line, lineNum)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 
 	fs.createDataBaseMap()
 	fs.closeAllColumnConnections()
+	addTableToList(fs.TableName)
 
 	return nil
 }
@@ -79,7 +90,7 @@ func (fs *TableData) createDataBaseMap() error {
 		return err
 	}
 
-	file, err := os.Create(DATA_FILE_PATH + "/" + fs.TableName + "/DataBaseMap.json")
+	file, err := utils.CreateFileRecursively(DATA_FILE_PATH + "/" + fs.TableName + "/DataBaseMap.json")
 	if err != nil {
 		return err
 	}
@@ -91,13 +102,17 @@ func (fs *TableData) createDataBaseMap() error {
 	return err
 }
 
-func (fs *TableData) initializeColumns(columnNames []string) {
+func (fs *TableData) initializeColumns(columnNames []string) error {
 
 	for _, columnName := range columnNames {
 		col := ColumnStruct{}
-		col.creatColumnsStruct(DATA_FILE_PATH+"/"+fs.TableName+"/"+columnName, fs.TableName+"_"+columnName)
+		err := col.creatColumnsStruct(fs.TableDirPath+columnName, columnName)
+		if err != nil {
+			return err
+		}
 		fs.Columns = append(fs.Columns, col)
 	}
+	return nil
 }
 
 func (fs *TableData) closeAllColumnConnections() {
@@ -107,10 +122,13 @@ func (fs *TableData) closeAllColumnConnections() {
 	}
 }
 
-func (fs *TableData) addDataLine(lineOfData []string, index int) {
+func (fs *TableData) addDataLine(lineOfData []string, index int) error {
 
 	for i, columnName := range lineOfData {
-		writeInd, _ := fs.Columns[i].addData(columnName, index)
+		writeInd, err := fs.Columns[i].addData(columnName, index)
+		if err != nil {
+			return nil
+		}
 
 		fs.MapOfData[index] = append(fs.MapOfData[index], writeInd)
 
@@ -119,6 +137,7 @@ func (fs *TableData) addDataLine(lineOfData []string, index int) {
 	// TODO
 	//fs.MapOfData[index] = append(fs.MapOfData[index], writeIndexes)
 
+	return nil
 }
 
 /*
@@ -128,8 +147,9 @@ func (fs *TableData) addDataLine(lineOfData []string, index int) {
 func (columnStruct *ColumnStruct) creatColumnsStruct(columnSaveFilePath string, columnName string) error {
 
 	columnStruct.ColumnName = columnName
+	columnStruct.ColumnFilePath = columnSaveFilePath
 	fmt.Println(columnName)
-	file, err := os.Create(columnSaveFilePath)
+	file, err := utils.CreateFileRecursively(columnSaveFilePath)
 	if err != nil {
 		return err
 	}
@@ -139,12 +159,16 @@ func (columnStruct *ColumnStruct) creatColumnsStruct(columnSaveFilePath string, 
 	return nil
 }
 
+// Saves data at given index.
+// Returns index at file and error writing file.
 func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error) {
 	fi, err := columnStruct.File.Stat()
 	if err != nil {
 		return -1, err
 	}
 	writeInd := fi.Size() + int64(columnStruct.OutStream.Buffered())
-	_, err = columnStruct.OutStream.WriteString(strconv.Itoa(index) + ")" + data + ",")
+	_, err = columnStruct.OutStream.WriteString(data)
+	// Writing delimiter
+	columnStruct.OutStream.WriteByte('$')
 	return writeInd, err
 }

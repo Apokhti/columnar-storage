@@ -42,4 +42,6 @@
 # custom ignores
 data/
 /main
+/testmain.go
+/test-folder/
 *__debug_bin
