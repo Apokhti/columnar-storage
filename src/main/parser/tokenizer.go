@@ -12,6 +12,7 @@ type Tokenizer struct {
 	ST        string
 }
 
+// SYMBOLS
 const SYMBOLS = "[{}().,;+-*/&|<>=~]"
 
 // Returns if character is digit
@@ -31,7 +32,7 @@ func isLetter(ch uint16) bool {
 
 // Returns if character is letter
 func isSymbol(ch uint16) bool {
-	return strings.Contains(SYMBOLS, fmt.Sprintf("%v", ch))
+	return strings.Contains(SYMBOLS, string(ch))
 }
 
 // Main sql keywords
@@ -42,7 +43,7 @@ func isKeyword(st string) bool {
 
 // moves to next character of tokenizr
 func (tkn *Tokenizer) next() {
-	tkn.index += 1
+	tkn.index++
 }
 
 // top
@@ -76,14 +77,13 @@ func (tkn *Tokenizer) nextToken() string {
 	}
 	if isSymbol(curChar) {
 		tkn.next()
-		return fmt.Sprintf("%v", curChar)
+		return string(curChar)
 	}
 	for true {
 		if curChar == 0 || isBlank(curChar) {
 			return curToken
 		}
-
-		curToken += fmt.Sprintf("%v", curChar)
+		curToken += string(curChar)
 
 		nextChar := tkn.peek()
 		if isBlank(nextChar) || isSymbol(nextChar) {
@@ -101,4 +101,15 @@ func (tkn *Tokenizer) nextToken() string {
 // returns new tokenizer
 func NewTokenizer(st string) *Tokenizer {
 	return &Tokenizer{index: 0, lastChar: 0, LastToken: "", ST: st}
+}
+
+func PrintTokens(st string) {
+	tokenizer := NewTokenizer(st)
+	for {
+		tok := tokenizer.nextToken()
+		if tok == "" {
+			break
+		}
+		fmt.Printf("%s\n", tok)
+	}
 }

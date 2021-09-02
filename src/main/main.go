@@ -82,14 +82,19 @@ func getCommand() string {
 }
 
 func main() {
-	fs = manager.TableData{}
-	for {
-		command := getCommand()
-		if command == "1" {
-			inputCSV()
-		} else if command == "2" {
-			inputQuerry()
-		}
-		break
-	}
+	query_str := "select my_file, bla+ blu from base where myfile < d and bla> 7 and kutu < 3 order by kdkw, wudia;"
+	fmt.Printf("%s\n", query_str)
+	parser.PrintTokens(query_str)
+	q, _ := parser.Parse(query_str)
+	q.PrintQuery()
+	// fs = manager.FileSaver{}
+	// for {
+	// 	command := getCommand()
+	// 	if command == "1" {
+	// 		inputCSV()
+	// 	} else if command == "2" {
+	// 		inputQuerry()
+	// 	}
+	// 	break
+	// }
 }

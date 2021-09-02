@@ -8,9 +8,11 @@ import (
 const SYMBOLS = "[{}().,;+-*/&|<>=~]"
 
 type Query struct {
-	QueryType       QueryType
-	Table           string
-	ExpressionsList []Expression
+	QueryType             QueryType
+	Table                 string
+	SelectExpressionsList []Expression
+	WhereExpressionList   []Expression
+	Orderby               []Expression
 }
 
 type QueryType int
@@ -32,7 +34,7 @@ func isDigit(ch uint16) bool {
 
 // Returns if character is letter
 func isSymbol(ch uint16) bool {
-	return strings.Contains(SYMBOLS, fmt.Sprintf("%v", ch))
+	return strings.Contains(SYMBOLS, string(ch))
 }
 
 // checks if its expression
@@ -52,4 +54,12 @@ func AddValueToExpression(expression *Expression, value string) {
 	}
 
 	expression.Fullexpression = expression.Fullexpression + value
+}
+
+// prints Query
+func (q *Query) PrintQuery() {
+	fmt.Printf("TABLE %s\n", q.Table)
+	fmt.Printf("SELECT EXPR %s\n", q.SelectExpressionsList)
+	fmt.Printf("WHERE EXPR %s\n", q.WhereExpressionList)
+	fmt.Printf("ORderby EXPR %s\n", q.Orderby)
 }
