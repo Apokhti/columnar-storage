@@ -40,6 +40,7 @@ type ColumnStruct struct {
 	ReadStram      *bufio.Reader `json:"-"`
 }
 
+// Creates CSV structure
 func (fs *TableData) CreateStructure(tableName, filePath string) error {
 	fs.TableName = tableName
 	fs.MapOfData = make(map[int][]int64)
@@ -172,3 +173,5 @@ func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error)
 	columnStruct.OutStream.WriteByte('$')
 	return writeInd, err
 }
+
+
