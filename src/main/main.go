@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"cs/src/main/manager"
+	"cs/src/main/parser"
 )
 
 var fs manager.TableData
@@ -87,14 +88,14 @@ func main() {
 	parser.PrintTokens(query_str)
 	q, _ := parser.Parse(query_str)
 	q.PrintQuery()
-	// fs = manager.FileSaver{}
-	// for {
-	// 	command := getCommand()
-	// 	if command == "1" {
-	// 		inputCSV()
-	// 	} else if command == "2" {
-	// 		inputQuerry()
-	// 	}
-	// 	break
-	// }
+	fs = manager.TableData{}
+	for {
+		command := getCommand()
+		if command == "1" {
+			inputCSV()
+		} else if command == "2" {
+			inputQuerry()
+		}
+		break
+	}
 }
