@@ -90,7 +90,7 @@ func main() {
 
 	columns := manager.ListAllColumns("data/myFile")
 	fmt.Printf("%v\n", columns)
-	manager.IndexBy("data/myFile/email")
+	manager.IndexBy("data/myFile/id", manager.IntType)
 	fs = manager.TableData{}
 
 }
