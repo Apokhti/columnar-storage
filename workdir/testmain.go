@@ -209,5 +209,5 @@ func testSimpleQuery() {
 func main() {
 	// testBTree1()
 	// testBTree2()
-	generateFile(1000000, "src/resources/BigData.csv")
+	generateFile(100000, "src/resources/BigData.csv")
 }

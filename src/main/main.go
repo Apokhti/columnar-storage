@@ -33,7 +33,7 @@ func readCSV(fileName string) {
 }
 
 func inputCSV() {
-	fileName := "src/resources/myFile.csv" //getFileName()
+	fileName := "src/resources/BigData.csv" //getFileName()
 	readCSV(fileName)
 }
 

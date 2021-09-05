@@ -47,3 +47,6 @@ BigData.csv
 /testmain.go
 /test-folder/
 *__debug_bin
+
+src/resources/BigData.csv
+
