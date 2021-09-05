@@ -27,9 +27,9 @@ const (
 )
 
 /**
-One of the most challanging problem was external sorting.
-This impementation uses Merge sort to handle big data.
-*/
+* One of the most challanging problem was external sorting.
+* This impementation uses Merge sort to handle big data.
+ */
 
 // ListAllColumns -> returns all columns
 func ListAllColumns(path string) []string {
@@ -53,25 +53,84 @@ func fileExists(columnPath string) bool {
 	return true
 }
 
-// Creates index by column
-func IndexBy(indexName string, columnType VariableType) {
+// IndexBy - Creates index by column
+func IndexBy(indexName string, columns []ColumnStruct, columnType VariableType) {
 	//TODO yvela
-	sortRes := sortFile(indexName, indexName+"_sorted", columnType)
-	fmt.Printf("%v\n", sortRes)
+	fmt.Printf("%v\n", columns)
+	os.MkdirAll(indexName+"-Indexed", os.ModePerm)
+	sortFile(indexName, columns, columnType)
 }
 
 // Sorts file by External Sorting
-func sortFile(fileName string, outputName string, columnType VariableType) bool {
+func sortFile(fileName string, columns []ColumnStruct, columnType VariableType) bool {
 	if !fileExists(fileName) {
 		return false
 	}
-	partitionFile(fileName, columnType)
-	// TODO mergeFile
+	partitionFilenames := partitionFile(fileName, columnType)
+	for _, column := range columns {
+		partitionFile(column.ColumnFilePath, columnType)
+	}
+
+	for _, partitionName := range partitionFilenames {
+		fullPartitionName := fileName + partitionKeyword + partitionName
+		sortPartitionFile(fullPartitionName, columnType)
+		indices := getVirtualIndices(fullPartitionName)
+		for i := range columns {
+			sortByVirtualIndices(indices, columns[i].ColumnFilePath+partitionKeyword+partitionName)
+		}
+	}
+
+	mergePartitions(fileName, partitionFilenames, columns, columnType)
+
 	return true
 }
 
+// Sort sort sort sort sort sort sort sort sort
+func sortByVirtualIndices(indices []int, partitionFilename string) {
+	f, _ := os.Open(partitionFilename)
+	defer f.Close()
+	r := bufio.NewReader(f)
+
+	result := []string{}
+	for {
+		curRecord, err := nextRecord(r)
+		if err == io.EOF && curRecord == "" {
+			break
+		}
+		result = append(result, curRecord)
+	}
+
+	mp := mapOfIndices(indices)
+
+	final := make([]string, maxRecord)
+	for _, record := range result {
+		index := record[:strings.Index(record, ")")]
+		i, _ := strconv.Atoi(index)
+		realInd := mp[i]
+		final[realInd] = record
+	}
+
+	f1, _ := os.OpenFile(partitionFilename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	defer f1.Close()
+	for _, record := range final {
+		if record != "" {
+			f1.WriteString(record + string(delimiter))
+		}
+	}
+}
+
+// Creates map of indices.
+// Which record goes where according to sort
+func mapOfIndices(indices []int) map[int]int {
+	result := make(map[int]int)
+	for i, val := range indices {
+		result[val] = i
+	}
+	return result
+}
+
 // Partition file
-func partitionFile(filename string, columnType VariableType) {
+func partitionFile(filename string, columnType VariableType) []string {
 	f, _ := os.Open(filename)
 	defer f.Close()
 	text := ""
@@ -81,7 +140,7 @@ func partitionFile(filename string, columnType VariableType) {
 	paritionFilenames := []string{}
 	for {
 		curRecord, err := nextRecord(r)
-		
+
 		if curRecord != "" {
 			text += curRecord + string(delimiter)
 		}
@@ -91,7 +150,6 @@ func partitionFile(filename string, columnType VariableType) {
 				paritionName := filename + partitionKeyword + fmt.Sprint(nChunks)
 				paritionFilenames = append(paritionFilenames, fmt.Sprint(nChunks))
 				createPartitionFile(text, paritionName)
-				sortPartitionFile(paritionName, columnType)
 			}
 			break
 		}
@@ -102,28 +160,47 @@ func partitionFile(filename string, columnType VariableType) {
 			paritionName := filename + partitionKeyword + fmt.Sprint(nChunks)
 			paritionFilenames = append(paritionFilenames, fmt.Sprint(nChunks))
 			createPartitionFile(text, paritionName)
-			sortPartitionFile(paritionName, columnType)
 			text, curNumRecords = "", 0
 		}
 	}
-	mergePartitions(filename, paritionFilenames, columnType)
+	return paritionFilenames
 }
 
+// Returns virtual indices sequence
+func getVirtualIndices(filename string) []int {
+	result := []int{}
+	f, _ := os.Open(filename)
+	defer f.Close()
+	r := bufio.NewReader(f)
+
+	for {
+		curRecord, err := nextRecord(r)
+		if err == io.EOF && curRecord == "" {
+			break
+		}
+		index := curRecord[:strings.Index(curRecord, ")")]
+		i, err := strconv.Atoi(index)
+		result = append(result, i)
+	}
+	return result
+}
+
+// We need to use it as a queue
 func removeIndex(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
 }
 
 // Patition merge code
-func mergePartitions(filename string, partitionFilenames []string, columnType VariableType) {
+func mergePartitions(filename string, partitionFilenames []string, columns []ColumnStruct, columnType VariableType) {
 	fmt.Printf("Starting merging: %v\n", partitionFilenames)
 	for {
-		if len(partitionFilenames) <= 1 {
+		if len(partitionFilenames) == 1 {
+			os.Rename(filename+partitionKeyword+partitionFilenames[0], filename+"-sorted")
 			break
 		}
 
-		mergeTwoFiles(filename, partitionFilenames[0], partitionFilenames[1], columnType)
+		mergeTwoFiles(filename, partitionFilenames[0], partitionFilenames[1], columns, columnType)
 		fmt.Printf("merged %v %v\n", partitionFilenames[0], partitionFilenames[1])
-
 		partitionFilenames = append(partitionFilenames, partitionFilenames[0]+partitionFilenames[1])
 		partitionFilenames = removeIndex(partitionFilenames, 0)
 		partitionFilenames = removeIndex(partitionFilenames, 0)
@@ -131,8 +208,25 @@ func mergePartitions(filename string, partitionFilenames []string, columnType Va
 
 }
 
+// Returns next records for all paritions
+func nextRecords(readers []*bufio.Reader) []string {
+	result := make([]string, len(readers))
+	for i, r := range readers {
+		result[i], _ = nextRecord(r)
+	}
+	fmt.Printf("%v next\n", result)
+	return result
+}
+
+func writeRecords(files []*os.File, records []string) {
+	for i, record := range records {
+		files[i].WriteString(record + string(delimiter))
+	}
+}
+
 // Merging two files is great tool that be used in mergin K files yo
-func mergeTwoFiles(filename string, partitionFirst string, partitionSecond string, columnType VariableType) {
+func mergeTwoFiles(filename string, partitionFirst string, partitionSecond string, columns []ColumnStruct, columnType VariableType) {
+
 	fmt.Printf("Merging %v %v\n", partitionFirst, partitionSecond)
 	f, _ := os.Create(filename + partitionKeyword + partitionFirst + partitionSecond)
 
@@ -149,6 +243,26 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 
 	a, err1 := nextRecord(r1)
 	b, err2 := nextRecord(r2)
+
+	files := make([]*os.File, len(columns))
+
+	files1 := make([]*os.File, len(columns))
+	files2 := make([]*os.File, len(columns))
+
+	readers1 := make([]*bufio.Reader, len(columns))
+	readers2 := make([]*bufio.Reader, len(columns))
+	for i, col := range columns {
+		files[i], _ = os.Create(col.ColumnFilePath + partitionKeyword + partitionFirst + partitionSecond)
+		files1[i], _ = os.Open(col.ColumnFilePath + partitionKeyword + partitionFirst)
+		files2[i], _ = os.Open(col.ColumnFilePath + partitionKeyword + partitionSecond)
+
+		readers1[i] = bufio.NewReader(files1[i])
+		readers2[i] = bufio.NewReader(files2[i])
+	}
+
+	as := nextRecords(readers1)
+	bs := nextRecords(readers2)
+
 	for {
 
 		fmt.Printf("%v %v\n", a, b)
@@ -163,10 +277,14 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 		}
 
 		if cmp(a, b, columnType) > 0 {
-			f.WriteString(b + string(delimiter))
+			writeRecords(files, bs)
+			// f.WriteString(b + string(delimiter))
+			bs = nextRecords(readers2)
 			b, err2 = nextRecord(r2)
 		} else {
-			f.WriteString(a + string(delimiter))
+			writeRecords(files, as)
+			// f.WriteString(a + string(delimiter))
+			as = nextRecords(readers1)
 			a, err1 = nextRecord(r1)
 		}
 
@@ -178,7 +296,9 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			if err2 == io.EOF && b == "" {
 				break
 			}
-			f.WriteString(b + string(delimiter))
+			writeRecords(files, bs)
+			// f.WriteString(b + string(delimiter))
+			bs = nextRecords(readers2)
 			b, err2 = nextRecord(r2)
 		}
 	}
@@ -188,9 +308,10 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			if err1 == io.EOF && a == "" {
 				break
 			}
-			f.WriteString(a + string(delimiter))
+			writeRecords(files, as)
+			// f.WriteString(a + string(delimiter))
+			as = nextRecords(readers1)
 			a, err1 = nextRecord(r1)
-
 		}
 	}
 }
@@ -227,6 +348,9 @@ func sortPartitionFile(fileName string, columnType VariableType) {
 	for _, record := range sorted {
 		f1.WriteString(record + string(delimiter))
 	}
+
+	indices := getVirtualIndices(fileName)
+	fmt.Printf("%v indices", indices)
 }
 
 // Sorts in RAM
@@ -279,6 +403,9 @@ func siftDown(heap []string, columnType VariableType, lo, hi int) {
 	Return -1, if a < b.
 */
 func cmp(a string, b string, columnType VariableType) int {
+	a = a[strings.Index(a, ")")+1:]
+	b = b[strings.Index(b, ")")+1:]
+
 	if columnType == IntType {
 		aInt, _ := strconv.Atoi(a)
 		bInt, _ := strconv.Atoi(b)

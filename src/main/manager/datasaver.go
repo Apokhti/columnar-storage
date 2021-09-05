@@ -168,10 +168,10 @@ func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error)
 		return -1, err
 	}
 	writeInd := fi.Size() + int64(columnStruct.OutStream.Buffered())
+	_, err = columnStruct.OutStream.WriteString(fmt.Sprintf("%v)", index))
+
 	_, err = columnStruct.OutStream.WriteString(data)
 	// Writing delimiter
 	columnStruct.OutStream.WriteByte('$')
 	return writeInd, err
 }
-
-
