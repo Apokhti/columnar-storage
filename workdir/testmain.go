@@ -173,7 +173,7 @@ func generateFile(numRows int, filePath string) {
 		newStr = append(newStr, randomPos(names))
 		newStr = append(newStr, randomPos(names)+"@gmail.com")
 		newStr = append(newStr, fmt.Sprintf("%v", rand.Int31n(100)))
-		newStr = append(newStr, fmt.Sprintf("%v", rand.Int()))
+		newStr = append(newStr, fmt.Sprintf("%v", rand.Int31()))
 
 		writer.Write(newStr)
 	}
