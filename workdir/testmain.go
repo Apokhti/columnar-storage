@@ -10,8 +10,15 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"os"
 	"time"
+)
+
+const (
+	connHost = "localhost"
+	connPort = "1434"
+	connType = "tcp"
 )
 
 func test1() {
@@ -183,6 +190,20 @@ func generateFile(numRows int, filePath string) {
 
 func randomPos(arr []string) string {
 	return arr[rand.Intn(len(arr))]
+}
+
+func testSimpleQuery() {
+	conn, err := net.Dial(connType, connHost+":"+connPort)
+	reader := bufio.NewReader(os.Stdin)
+	for {
+
+		input := "SELECT * from dual"
+
+		message, _ := bufio.NewReader(conn).ReadString('\n')
+
+		log.Print("Server relay:", message)
+	}
+
 }
 
 func main() {

@@ -55,15 +55,24 @@ func fileExists(columnPath string) bool {
 }
 
 // IndexBy - Creates index by column
-func IndexBy(columnName string, path string, columns []ColumnStruct, columnType VariableType) {
+func IndexBy(columnName string, path string, fs TableData, columnType VariableType) {
 	//TODO yvela
-	fmt.Printf("%v\n", columns)
+	fmt.Printf("%v\n", fs.Columns)
 
 	dirpath, _ := os.Getwd()
 	fmt.Printf("diiir %v\n", dirpath)
 
 	os.MkdirAll(dirpath+dataPath+columnName+"-Indexed", os.ModePerm)
-	sortFile(columnName, path, columns, columnType)
+	sortFile(columnName, path, fs.Columns, columnType)
+	fs.Indexes = append(fs.Indexes, IndexData{
+		IndexColumnName: columnName,
+		IndexDirPath:    dirpath + dataPath + columnName + "-Indexed",
+	})
+
+	err := fs.StoreTableMap()
+	if err != nil {
+		fmt.Println("error storing data table map: ", fs)
+	}
 }
 
 // Sorts file by External Sorting

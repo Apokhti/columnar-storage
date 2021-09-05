@@ -2,6 +2,7 @@ package manager
 
 import (
 	"bufio"
+	"cs/src/main/btree"
 	"cs/src/main/utils"
 	"encoding/csv"
 	"encoding/json"
@@ -36,6 +37,7 @@ type ColumnStruct struct {
 	ColumnFilePath string
 	Type           string
 	File           *os.File      `json:"-"`
+	Tree           *btree.Tree   `json:"-"`
 	OutStream      *bufio.Writer `json:"-"`
 	ReadStram      *bufio.Reader `json:"-"`
 }
@@ -77,14 +79,14 @@ func (fs *TableData) CreateStructure(tableName, filePath string) error {
 		}
 	}
 
-	fs.createDataBaseMap()
+	fs.StoreTableMap()
 	fs.closeAllColumnConnections()
 	addTableToList(fs.TableName)
 
 	return nil
 }
 
-func (fs *TableData) createDataBaseMap() error {
+func (fs *TableData) StoreTableMap() error {
 
 	data, err := json.Marshal(fs)
 	if err != nil {
@@ -107,7 +109,7 @@ func (fs *TableData) initializeColumns(columnNames []string) error {
 
 	for _, columnName := range columnNames {
 		col := ColumnStruct{}
-		err := col.creatColumnsStruct(fs.TableDirPath+columnName, columnName)
+		err := col.createColumnsStruct(fs.TableDirPath+columnName, columnName)
 		if err != nil {
 			return err
 		}
@@ -145,7 +147,7 @@ func (fs *TableData) addDataLine(lineOfData []string, index int) error {
 //	columnName = tableName + _ + columnName
 //
 */
-func (columnStruct *ColumnStruct) creatColumnsStruct(columnSaveFilePath string, columnName string) error {
+func (columnStruct *ColumnStruct) createColumnsStruct(columnSaveFilePath string, columnName string) error {
 
 	columnStruct.ColumnName = columnName
 	columnStruct.ColumnFilePath = columnSaveFilePath
@@ -154,6 +156,11 @@ func (columnStruct *ColumnStruct) creatColumnsStruct(columnSaveFilePath string, 
 	if err != nil {
 		return err
 	}
+	tree, err := btree.CreateTree(columnSaveFilePath + ".idx")
+	if err != nil {
+		return err
+	}
+	columnStruct.Tree = tree
 	writer := bufio.NewWriter(file)
 	columnStruct.OutStream = writer
 	columnStruct.File = file
@@ -173,5 +180,7 @@ func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error)
 	_, err = columnStruct.OutStream.WriteString(data)
 	// Writing delimiter
 	columnStruct.OutStream.WriteByte('$')
+
+	err = columnStruct.Tree.InsertValue(int64(index), writeInd)
 	return writeInd, err
 }
