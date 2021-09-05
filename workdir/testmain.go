@@ -10,8 +10,15 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"os"
 	"time"
+)
+
+const (
+	connHost = "localhost"
+	connPort = "1434"
+	connType = "tcp"
 )
 
 func test1() {
@@ -185,8 +192,26 @@ func randomPos(arr []string) string {
 	return arr[rand.Intn(len(arr))]
 }
 
+func testSimpleQuery() {
+	conn, _ := net.Dial(connType, connHost+":"+connPort)
+	for {
+
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Text to send: ")
+		text, _ := reader.ReadString('\n')
+		// send to server
+		fmt.Fprintf(conn, text+"\n")
+
+		message, _ := bufio.NewReader(conn).ReadString('\n')
+
+		log.Print("Massage: ", message)
+	}
+
+}
+
 func main() {
 	// testBTree1()
 	// testBTree2()
-	generateFile(100000, "src/resources/BigData.csv")
+	// generateFile(100000, "src/resources/BigData.csv")
+	testSimpleQuery()
 }

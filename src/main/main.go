@@ -1,47 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"sort"
 
 	"cs/src/main/manager"
-	"cs/src/main/parser"
+	"cs/src/main/server"
 )
 
 var fs manager.TableData
-
-func getQuerry() string {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Querry: ")
-	fileName, _ := reader.ReadString('\n')
-	return fileName
-}
-
-func inputQuerry() {
-	// querry := getQuerry()
-	// querry = querry[:len(querry)-1]
-	// fmt.Println(querry)
-
-	// pts, err := parser.Parse(querry)
-
-	// if err != nil {
-	// 	fmt.Println("parser error ", err)
-	// 	return
-	// }
-
-	// data := manager.QuerryExecutor(&fs, &pts)
-
-	// println(data)
-}
-
-func getFileName() string {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("CSV FileName: ")
-	fileName, _ := reader.ReadString('\n')
-	return fileName
-}
 
 func readCSV(fileName string) {
 	fmt.Println("reading file", fileName)
@@ -83,30 +50,28 @@ func getCommand() string {
 }
 
 func main() {
-	query_str := "select my_file, bla+ blu from base where myfile < d and bla> 7 and kutu < 3 order by kdkw, wudia;"
-	fmt.Printf("%s\n", query_str)
-	parser.PrintTokens(query_str)
-	q, _ := parser.Parse(query_str)
-	q.PrintQuery()
+	// query_str := "select my_file, bla+ blu from base where myfile < d and bla> 7 and kutu < 3 order by kdkw, wudia;"
+	// fmt.Printf("%s\n", query_str)
+	// parser.PrintTokens(query_str)
+	// q, _ := parser.Parse(query_str)
+	// q.PrintQuery()
 	// fmt.Printf("Expression to calculate %v\n", q.SelectExpressionsList[1])
 	// mp := make(map[string]interface{}, 10)
 	// mp["bla"] = 1
 	// mp["blu"] = 100
 	// result, _ := query.CalculateSelectExpression(q.SelectExpressionsList[1], mp)
 	// fmt.Printf("Result %v\n", result)
+	// fs = manager.TableData{}
+	// for {
+	// 	command := getCommand()
+	// 	if command == "1" {
+	// 		inputCSV()
+	// 	} else if command == "2" {
+	// 		// inputQuerry()
+	// 	}
+	// 	break
+	// }
 
-	fs = manager.TableData{}
-	for {
-		command := getCommand()
-		if command == "1" {
-			inputCSV()
-		} else if command == "2" {
-			inputQuerry()
-		}
-		break
-	}
-
-	manager.IndexBy("Email", "data/myFile/Email", fs.Columns, manager.StringType)
-	// 46623)Tomok$35734
-
+	// manager.IndexBy("id", "data/myFile/id", fs, manager.IntType)
+	server.ServeRequests()
 }
