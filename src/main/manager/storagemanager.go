@@ -11,7 +11,7 @@ import (
 )
 
 const buffer_size = 40
-const maxRecord = 3
+const maxRecord = 5000
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
 const dataPath = "/data/"
@@ -218,8 +218,7 @@ func mergePartitions(columnName string, filename string, partitionFilenames []st
 		}
 
 		mergeTwoFiles(filename, partitionFilenames[0], partitionFilenames[1], columns, columnType)
-		fmt.Printf("merged %v %v\n", partitionFilenames[0], partitionFilenames[1])
-		partitionFilenames = append(partitionFilenames, partitionFilenames[0]+partitionFilenames[1])
+		partitionFilenames = append(partitionFilenames, partitionFilenames[0]+"-"+partitionFilenames[1])
 		removePartitions(columns, partitionFilenames[0])
 		removePartitions(columns, partitionFilenames[1])
 		partitionFilenames = removeIndex(partitionFilenames, 0)
@@ -234,7 +233,7 @@ func nextRecords(readers []*bufio.Reader) []string {
 	for i, r := range readers {
 		result[i], _ = nextRecord(r)
 	}
-	fmt.Printf("%v next\n", result)
+	// fmt.Printf("%v next\n", result)
 	return result
 }
 
@@ -248,7 +247,7 @@ func writeRecords(files []*os.File, records []string) {
 func mergeTwoFiles(filename string, partitionFirst string, partitionSecond string, columns []ColumnStruct, columnType VariableType) {
 
 	fmt.Printf("Merging %v %v\n", partitionFirst, partitionSecond)
-	f, _ := os.Create(filename + partitionKeyword + partitionFirst + partitionSecond)
+	f, _ := os.Create(filename + partitionKeyword + partitionFirst + "-" + partitionSecond)
 
 	f1, _ := os.Open(filename + partitionKeyword + partitionFirst)
 	f2, _ := os.Open(filename + partitionKeyword + partitionSecond)
@@ -272,7 +271,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 	readers1 := make([]*bufio.Reader, len(columns))
 	readers2 := make([]*bufio.Reader, len(columns))
 	for i, col := range columns {
-		files[i], _ = os.Create(col.ColumnFilePath + partitionKeyword + partitionFirst + partitionSecond)
+		files[i], _ = os.Create(col.ColumnFilePath + partitionKeyword + partitionFirst + "-" + partitionSecond)
 		files1[i], _ = os.Open(col.ColumnFilePath + partitionKeyword + partitionFirst)
 		files2[i], _ = os.Open(col.ColumnFilePath + partitionKeyword + partitionSecond)
 
@@ -285,7 +284,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 
 	for {
 
-		fmt.Printf("%v %v\n", a, b)
+		// fmt.Printf("%v %v\n", a, b)
 
 		if err1 == io.EOF && a == "" {
 			r1End = true

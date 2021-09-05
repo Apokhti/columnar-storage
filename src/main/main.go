@@ -66,7 +66,7 @@ func readCSV(fileName string) {
 }
 
 func inputCSV() {
-	fileName := "src/resources/myFile.csv" //getFileName()
+	fileName := "src/resources/BigData.csv" //getFileName()
 	readCSV(fileName)
 }
 
@@ -99,6 +99,6 @@ func main() {
 		break
 	}
 
-	manager.IndexBy("id", "data/myFile/id", fs.Columns, manager.IntType)
+	manager.IndexBy("Email", "data/myFile/Email", fs.Columns, manager.StringType)
 
 }
