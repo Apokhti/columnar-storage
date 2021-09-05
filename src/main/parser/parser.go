@@ -10,7 +10,7 @@ import (
 func Parse(queryTxt string) (query.Query, error) {
 
 	tokenizer := NewTokenizer(queryTxt)
-	q, err := (&parser{tokenizer, stepType, query.Query{}, nil}).parse()
+	q, err := (&parser{tokenizer, stepType, query.Query{}, nil}).Parse()
 	return q, err
 }
 
@@ -33,7 +33,7 @@ type parser struct {
 	err       error
 }
 
-func (p *parser) parse() (query.Query, error) {
+func (p *parser) Parse() (query.Query, error) {
 	q, err := p.parseQuery()
 	p.err = err
 	return q, p.err
