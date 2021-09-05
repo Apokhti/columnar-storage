@@ -88,6 +88,13 @@ func main() {
 	parser.PrintTokens(query_str)
 	q, _ := parser.Parse(query_str)
 	q.PrintQuery()
+	// fmt.Printf("Expression to calculate %v\n", q.SelectExpressionsList[1])
+	// mp := make(map[string]interface{}, 10)
+	// mp["bla"] = 1
+	// mp["blu"] = 100
+	// result, _ := query.CalculateSelectExpression(q.SelectExpressionsList[1], mp)
+	// fmt.Printf("Result %v\n", result)
+
 	fs = manager.TableData{}
 	for {
 		command := getCommand()
@@ -100,5 +107,6 @@ func main() {
 	}
 
 	manager.IndexBy("Email", "data/myFile/Email", fs.Columns, manager.StringType)
+	// 46623)Tomok$35734
 
 }
