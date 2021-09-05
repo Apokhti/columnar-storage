@@ -99,6 +99,6 @@ func main() {
 		break
 	}
 
-	manager.IndexBy("data/myFile/firstname", fs.Columns, manager.StringType)
+	manager.IndexBy("id", "data/myFile/id", fs.Columns, manager.IntType)
 
 }

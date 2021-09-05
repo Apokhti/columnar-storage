@@ -14,6 +14,7 @@ const buffer_size = 40
 const maxRecord = 3
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
+const dataPath = "/data/"
 
 type VariableType int64
 
@@ -54,15 +55,19 @@ func fileExists(columnPath string) bool {
 }
 
 // IndexBy - Creates index by column
-func IndexBy(indexName string, columns []ColumnStruct, columnType VariableType) {
+func IndexBy(columnName string, path string, columns []ColumnStruct, columnType VariableType) {
 	//TODO yvela
 	fmt.Printf("%v\n", columns)
-	os.MkdirAll(indexName+"-Indexed", os.ModePerm)
-	sortFile(indexName, columns, columnType)
+
+	dirpath, _ := os.Getwd()
+	fmt.Printf("diiir %v\n", dirpath)
+
+	os.MkdirAll(dirpath+dataPath+columnName+"-Indexed", os.ModePerm)
+	sortFile(columnName, path, columns, columnType)
 }
 
 // Sorts file by External Sorting
-func sortFile(fileName string, columns []ColumnStruct, columnType VariableType) bool {
+func sortFile(columnName string, fileName string, columns []ColumnStruct, columnType VariableType) bool {
 	if !fileExists(fileName) {
 		return false
 	}
@@ -80,7 +85,7 @@ func sortFile(fileName string, columns []ColumnStruct, columnType VariableType) 
 		}
 	}
 
-	mergePartitions(fileName, partitionFilenames, columns, columnType)
+	mergePartitions(columnName, fileName, partitionFilenames, columns, columnType)
 
 	return true
 }
@@ -190,18 +195,33 @@ func removeIndex(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
 }
 
+// Remove unnecessary middle partition files
+func removePartitions(columns []ColumnStruct, partitionName string) {
+	for i := range columns {
+		filename := columns[i].ColumnFilePath + partitionKeyword + partitionName
+		os.Remove(filename)
+	}
+}
+
 // Patition merge code
-func mergePartitions(filename string, partitionFilenames []string, columns []ColumnStruct, columnType VariableType) {
+func mergePartitions(columnName string, filename string, partitionFilenames []string, columns []ColumnStruct, columnType VariableType) {
 	fmt.Printf("Starting merging: %v\n", partitionFilenames)
+	dirpath, _ := os.Getwd()
 	for {
 		if len(partitionFilenames) == 1 {
-			os.Rename(filename+partitionKeyword+partitionFilenames[0], filename+"-sorted")
+			for i := range columns {
+				filename := columns[i].ColumnFilePath + partitionKeyword + partitionFilenames[0]
+				os.Rename(filename, dirpath+dataPath+columnName+"-Indexed/"+columns[i].ColumnName)
+
+			}
 			break
 		}
 
 		mergeTwoFiles(filename, partitionFilenames[0], partitionFilenames[1], columns, columnType)
 		fmt.Printf("merged %v %v\n", partitionFilenames[0], partitionFilenames[1])
 		partitionFilenames = append(partitionFilenames, partitionFilenames[0]+partitionFilenames[1])
+		removePartitions(columns, partitionFilenames[0])
+		removePartitions(columns, partitionFilenames[1])
 		partitionFilenames = removeIndex(partitionFilenames, 0)
 		partitionFilenames = removeIndex(partitionFilenames, 0)
 	}
