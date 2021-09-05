@@ -19,18 +19,18 @@ type Tree struct {
 }
 
 type TreeNode struct {
-	M            int   // 4 bytes
-	State        int   // 4 bytes
-	KeysPresent  int   // 4 bytes
-	SelfOffset   int   // 4 bytes
-	Keys         []int // 4 * 4 bytes
-	RecordOffset []int // 4 * 4 bytes
-	ChildOffset  []int // 5 * 4 bytes
+	M            int     // 4 bytes
+	State        int     // 4 bytes
+	KeysPresent  int     // 4 bytes
+	SelfOffset   int64   // 8 bytes
+	Keys         []int64 // 4 * 8 bytes
+	RecordOffset []int64 // 4 * 8 bytes
+	ChildOffset  []int64 // 5 * 8 bytes
 }
 
 // inserting single value in array of keys
 // in the node
-func (node *TreeNode) insertValue(key, recordOffset int) {
+func (node *TreeNode) insertValue(key, recordOffset int64) {
 	var inserted bool = false
 	for i := node.KeysPresent - 1; i > -1; i-- {
 		if node.Keys[i] > key {
@@ -50,7 +50,7 @@ func (node *TreeNode) insertValue(key, recordOffset int) {
 	node.KeysPresent++
 }
 
-func (node *TreeNode) splitChild(index int, child *TreeNode, nodesToUpdate map[int]*TreeNode, nodesFile *os.File) error {
+func (node *TreeNode) splitChild(index int, child *TreeNode, nodesToUpdate map[int64]*TreeNode, nodesFile *os.File) error {
 	newNode, err := createNode(nodesFile)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (node *TreeNode) splitChild(index int, child *TreeNode, nodesToUpdate map[i
 }
 
 /// aq internals gulisxmob?
-func (node *TreeNode) internalInsert(key, recordOffset int, nodesToUpdate map[int]*TreeNode, nodeFile *os.File) (*TreeNode, bool) {
+func (node *TreeNode) internalInsert(key, recordOffset int64, nodesToUpdate map[int64]*TreeNode, nodeFile *os.File) (*TreeNode, bool) {
 	if node.State == LEAF {
 		node.insertValue(key, recordOffset)
 		nodesToUpdate[node.SelfOffset] = node
@@ -126,7 +126,7 @@ func (node *TreeNode) internalInsert(key, recordOffset int, nodesToUpdate map[in
 	return node, node.KeysPresent == node.M
 }
 
-func (tree *Tree) updateRoot(changeMap map[int]*TreeNode) error {
+func (tree *Tree) updateRoot(changeMap map[int64]*TreeNode) error {
 	oldRoot := tree.Root
 	newRootNode, err := createNode(tree.StoreFile)
 	if err != nil {
@@ -168,8 +168,8 @@ func (tree *Tree) updateRoot(changeMap map[int]*TreeNode) error {
 	return err
 }
 
-func (tree *Tree) InsertValue(key, recordOffset int) error {
-	changeMap := make(map[int]*TreeNode)
+func (tree *Tree) InsertValue(key, recordOffset int64) error {
+	changeMap := make(map[int64]*TreeNode)
 	_, split := tree.Root.internalInsert(key, recordOffset, changeMap, tree.StoreFile)
 
 	if split {
@@ -190,7 +190,7 @@ func (tree *Tree) InsertValue(key, recordOffset int) error {
 	return nil
 }
 
-func (node *TreeNode) getInternal(key int, file *os.File) (int, error) {
+func (node *TreeNode) getInternal(key int64, file *os.File) (int64, error) {
 	for i := node.KeysPresent - 1; i > -1; i-- {
 		if key == node.Keys[i] {
 			return node.RecordOffset[i], nil
@@ -211,7 +211,7 @@ func (node *TreeNode) getInternal(key int, file *os.File) (int, error) {
 	return child.getInternal(key, file)
 }
 
-func (tree *Tree) Get(key int) (int, error) {
+func (tree *Tree) Get(key int64) (int64, error) {
 	return tree.Root.getInternal(key, tree.StoreFile)
 }
 
@@ -237,4 +237,23 @@ func CreateTree(filePath string) (*Tree, error) {
 	err = updateRootOffset(tree.Root.SelfOffset, tree.StoreFile)
 
 	return &tree, err
+}
+
+func LoadTree(filePath string) (*Tree, error) {
+	tree := Tree{}
+
+	file, err := os.OpenFile(filePath, os.O_RDWR, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+
+	tree.StoreFile = file
+	node, err := loadRootNodeFromFile(tree.StoreFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tree.Root = node
+	return &tree, nil
 }
