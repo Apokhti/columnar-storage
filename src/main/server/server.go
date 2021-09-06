@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"cs/src/main/manager"
 	"cs/src/main/parser"
+	"cs/src/main/query"
+
 	"fmt"
 	"log"
 	"net"
@@ -50,9 +52,9 @@ func handleConnection(conn net.Conn, fs manager.TableData) {
 }
 
 // Main method for handling client query
-func handleQuery(query string, fs manager.TableData) string {
-	fmt.Printf("Query %v\n", query)
-	tokens := parser.FullTokenize(query)
+func handleQuery(fullquery string, fs manager.TableData) string {
+	fmt.Printf("Query %v\n", fullquery)
+	tokens := parser.FullTokenize(fullquery)
 	if strings.ToUpper(tokens[0]) == "INDEX" && strings.ToUpper(tokens[1]) == "BY" {
 		variableType := "STRING"
 		if len(tokens) >= 2 {
@@ -64,9 +66,10 @@ func handleQuery(query string, fs manager.TableData) string {
 			return "Didn't index by " + tokens[2]
 		}
 	} else {
-		q, _ := parser.Parse(query)
+		q, _ := parser.Parse(fullquery)
+		fmt.Printf("qqqq %v\n", q)
 		q.PrintQuery()
-
+		query.ExecuteQuery(&fs, &q)
 	}
 	return "NOT COMMAND"
 }

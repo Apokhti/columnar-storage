@@ -44,6 +44,8 @@ func (p *parser) parseQuery() (query.Query, error) {
 	currentExpresion := query.Expression{}
 
 	for {
+		fmt.Printf("%v  \n", p.step)
+
 		switch p.step {
 		case stepType:
 			if strings.ToUpper(p.peekNextToken()) == "SELECT" {
@@ -90,6 +92,8 @@ func (p *parser) parseQuery() (query.Query, error) {
 				p.query.WhereExpressionList = append(p.query.WhereExpressionList, currentExpresion)
 				currentExpresion = query.Expression{}
 			} else if strings.ToUpper(token) == ";" {
+				p.query.WhereExpressionList = append(p.query.WhereExpressionList, currentExpresion)
+				currentExpresion = query.Expression{}
 				p.step = stepEnd
 			} else {
 				query.AddValueToExpression(&currentExpresion, token)
