@@ -88,6 +88,13 @@ func (node *TreeNode) splitChild(index int, child *TreeNode, nodesToUpdate map[i
 
 /// aq internals gulisxmob?
 func (node *TreeNode) internalInsert(key, recordOffset int64, nodesToUpdate map[int64]*TreeNode, nodeFile *os.File) (*TreeNode, bool) {
+	// check if key already exists
+	for i := 0; i < node.KeysPresent; i++ {
+		if node.Keys[i] == key {
+			return node, false
+		}
+	}
+
 	if node.State == LEAF {
 		node.insertValue(key, recordOffset)
 		nodesToUpdate[node.SelfOffset] = node
@@ -203,16 +210,60 @@ func (node *TreeNode) getInternal(key int64, file *os.File) (int64, error) {
 			return child.getInternal(key, file)
 		}
 	}
-	child, err := readNodeFromFile(node.ChildOffset[0], file)
+	if node.State == INTERNAL_NODE {
+		child, err := readNodeFromFile(node.ChildOffset[0], file)
 
-	if err != nil {
-		return -1, err
+		if err != nil {
+			return -1, err
+		}
+		return child.getInternal(key, file)
 	}
-	return child.getInternal(key, file)
+
+	return -1, nil
 }
 
 func (tree *Tree) Get(key int64) (int64, error) {
 	return tree.Root.getInternal(key, tree.StoreFile)
+}
+
+func (node *TreeNode) findHigherInternal(key int64, file *os.File) (int64, error) {
+	if node.State == LEAF {
+		for i := 0; i < node.KeysPresent; i++ {
+			if node.Keys[i] > key {
+				return node.RecordOffset[i], nil
+			}
+		}
+		return -1, nil
+	}
+
+	var nextNode int = -1
+	for i := node.KeysPresent - 1; i > -1; i-- {
+		if key >= node.Keys[i] {
+			nextNode = i + 1
+			break
+		}
+	}
+	if nextNode == -1 {
+		nextNode = 0
+	}
+
+	child, err := readNodeFromFile(node.ChildOffset[nextNode], file)
+	if err != nil {
+		return -1, err
+	}
+
+	ans, err := child.findHigherInternal(key, file)
+	if err != nil {
+		return -1, err
+	} else if ans == -1 && nextNode != node.KeysPresent {
+		return node.RecordOffset[nextNode], nil
+	}
+
+	return ans, err
+}
+
+func (tree *Tree) FindHigher(key int64) (int64, error) {
+	return tree.Root.findHigherInternal(key, tree.StoreFile)
 }
 
 func CreateTree(filePath string) (*Tree, error) {
