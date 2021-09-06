@@ -261,7 +261,7 @@ func randomPos(arr []string) string {
 func testSimpleIndexQuery() {
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
 
-	text := "INDEX BY ID INT"
+	text := "INDEX BY Name STRING"
 	// send to server
 	fmt.Fprintf(conn, text+"\n")
 
@@ -274,7 +274,7 @@ func testSimpleIndexQuery() {
 func testSimpleSelectQuery() {
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
 
-	text := "select (ID*2)+3, Email, Name from base where ID <  50;"
+	text := "select (ID*2)+3, Email, Name from base where ID <  10;"
 	// send to server
 	fmt.Fprintf(conn, text+"\n")
 
@@ -287,7 +287,7 @@ func testSimpleSelectQuery() {
 func main() {
 	// testBTree1()
 	// testBTree2()
-	testBTree3()
+	// testBTree3()
 	// generateFile(100000, "src/resources/BigData.csv")
 	// generateFile(100000, "src/resources/BigData.csv")
 	testSimpleIndexQuery()

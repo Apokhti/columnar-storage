@@ -10,15 +10,15 @@ import (
 )
 
 // ExecuteQuerry Main stuff
-func ExecuteQuery(td *manager.TableData, query *Query) map[string]interface{} {
+func ExecuteQuery(td *manager.TableData, query *Query) []interface{} {
 	// List of expressions
 	// filterExpressions := query.WhereExpressionList
 	// firstExpr := filterExpressions[0]
 	// fmt.Printf("%v Expression\n", firstExpr)
 	variables := variablesToSelect(query.SelectExpressionsList)
 	fmt.Printf("%v\n", variables)
-	filterResults(td, variables, query.SelectExpressionsList, query.WhereExpressionList)
-	return nil
+	result := filterResults(td, variables, query.SelectExpressionsList, query.WhereExpressionList)
+	return result
 }
 
 func variablesToSelect(selectExpressions []Expression) []string {

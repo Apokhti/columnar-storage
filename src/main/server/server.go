@@ -53,7 +53,7 @@ func handleConnection(conn net.Conn, fs manager.TableData) {
 
 // Main method for handling client query
 func handleQuery(fullquery string, fs manager.TableData) string {
-	fmt.Printf("Query %v\n", fullquery)
+	// fmt.Printf("Query %v\n", fullquery)
 	tokens := parser.FullTokenize(fullquery)
 	if strings.ToUpper(tokens[0]) == "INDEX" && strings.ToUpper(tokens[1]) == "BY" {
 		variableType := "STRING"
@@ -62,23 +62,20 @@ func handleQuery(fullquery string, fs manager.TableData) string {
 		}
 		if b := handleIndexBy(tokens[2], fs, strings.ToUpper(variableType)); b {
 			return "Index By successful"
-		} else {
-			return "Didn't index by " + tokens[2]
 		}
+		return "Didn't index by " + tokens[2]
+
 	} else {
 		q, _ := parser.Parse(fullquery)
-		fmt.Printf("qqqq %v\n", q)
-		q.PrintQuery()
-		query.ExecuteQuery(&fs, &q)
+		return fmt.Sprintf("%v\n", query.ExecuteQuery(&fs, &q))
 	}
-	return "NOT COMMAND"
 }
 
 func handleIndexBy(column string, fs manager.TableData, indexType string) bool {
 
 	if indexType == "STRING" {
 		manager.IndexBy(column, "data/myFile/"+column, fs, manager.StringType)
-	} else {
+	} else if indexType == "INT" {
 		manager.IndexBy(column, "data/myFile/"+column, fs, manager.IntType)
 	}
 	return true

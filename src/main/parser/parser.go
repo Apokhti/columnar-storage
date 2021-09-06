@@ -44,7 +44,7 @@ func (p *parser) parseQuery() (query.Query, error) {
 	currentExpresion := query.Expression{}
 
 	for {
-		fmt.Printf("%v  \n", p.step)
+		// fmt.Printf("%v  \n", p.step)
 
 		switch p.step {
 		case stepType:
