@@ -13,3 +13,7 @@ func ExecuteQuery(td *manager.TableData, query *Query) map[string]interface{} {
 
 	return nil
 }
+
+func filterResults(filterExpression Expression) {
+
+}

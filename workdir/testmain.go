@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"os"
 	"sort"
 	"time"
@@ -257,23 +258,37 @@ func randomPos(arr []string) string {
 	return arr[rand.Intn(len(arr))]
 }
 
-// func testSimpleQuery() {
-// 	conn, err := net.Dial(connType, connHost+":"+connPort)
-// 	reader := bufio.NewReader(os.Stdin)
-// 	for {
+func testSimpleIndexQuery() {
+	conn, _ := net.Dial(connType, connHost+":"+connPort)
 
-// 		input := "SELECT * from dual"
+	text := "INDEX BY ID INT"
+	// send to server
+	fmt.Fprintf(conn, text+"\n")
 
-// 		message, _ := bufio.NewReader(conn).ReadString('\n')
+	message, _ := bufio.NewReader(conn).ReadString('\n')
 
-// 		log.Print("Server relay:", message)
-// 	}
+	log.Print("Massage: ", message)
 
-// }
+}
+
+func testSimpleSelectQuery() {
+	conn, _ := net.Dial(connType, connHost+":"+connPort)
+
+	text := "Select Name from dual where ID > 100"
+	// send to server
+	fmt.Fprintf(conn, text+"\n")
+
+	message, _ := bufio.NewReader(conn).ReadString('\n')
+
+	log.Print("Massage: ", message)
+
+}
 
 func main() {
 	// testBTree1()
 	// testBTree2()
 	testBTree3()
 	// generateFile(100000, "src/resources/BigData.csv")
+	// generateFile(100000, "src/resources/BigData.csv")
+	testSimpleSelectQuery()
 }
