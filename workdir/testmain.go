@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -104,7 +104,7 @@ func testBTree2() {
 	var mp map[int64]bool = make(map[int64]bool)
 	var arr []int64
 	var sum int64 = 0
-	for i := 0; i < 10000000; i++ {
+	for i := 0; i < 1000000; i++ {
 		var v int64 = 0
 		for mp[v] {
 			v = rand.Int63n(100000000000)
@@ -145,6 +145,71 @@ func testBTree2() {
 		sum += dur.Microseconds()
 	}
 	fmt.Printf("correct values got: %v\r\naverage Get time: %vms\r\n", correct, sum/1000000.0)
+}
+
+func testBTree3() {
+	tree, err := btree.CreateTree("test-folder/ind.tst")
+	if err != nil {
+		fmt.Println("error: ", err)
+		return
+	}
+
+	var cntRecords int = 1000000
+
+	var mp map[int64]bool = make(map[int64]bool)
+	var arr []int64
+	var sum int64 = 0
+	for i := 0; i < cntRecords; i++ {
+		var v int64 = 0
+		for mp[v] {
+			v = rand.Int63n(1000000000)
+		}
+
+		start := time.Now()
+		err = tree.InsertValue(v, v)
+		arr = append(arr, v)
+
+		if err != nil {
+			fmt.Printf("error on adding value, ind: %v pref: %v error: %v", v, v, err)
+		} else {
+			// fmt.Printf("value added key: %v value: %v\r\n", v, v)
+		}
+		mp[v] = true
+		duration := time.Since(start)
+		sum += duration.Microseconds()
+	}
+
+	fmt.Printf("ended inserting values averageTime: %vms\r\n", 1.0*sum/int64(cntRecords))
+
+	sort.SliceStable(arr, func(i, j int) bool {
+		return arr[i] < arr[j]
+	})
+
+	tree, err = btree.LoadTree("test-folder/ind.tst")
+	if err != nil {
+		fmt.Println("2nd test error: ", err)
+		return
+	}
+	var correct int = 0
+	sum = 0
+	for i, v := range arr {
+		start := time.Now()
+		val, err := tree.FindHigher(v)
+		if i == len(arr)-1 && val != -1 || i != len(arr)-1 && val != arr[i+1] {
+			var cor int64
+			if i == len(arr)-1 {
+				cor = -1
+			} else {
+				cor = arr[i+1]
+			}
+			fmt.Printf("key %v, value %v, correctVal: %v, error: %v\r\n", v, val, cor, err)
+		} else {
+			correct++
+		}
+		dur := time.Since(start)
+		sum += dur.Microseconds()
+	}
+	fmt.Printf("correct values got: %v\r\naverage Get time: %vms\r\n", correct, 1.0*sum/int64(cntRecords))
 }
 
 func loadNames() []string {
@@ -192,22 +257,23 @@ func randomPos(arr []string) string {
 	return arr[rand.Intn(len(arr))]
 }
 
-func testSimpleQuery() {
-	conn, err := net.Dial(connType, connHost+":"+connPort)
-	reader := bufio.NewReader(os.Stdin)
-	for {
+// func testSimpleQuery() {
+// 	conn, err := net.Dial(connType, connHost+":"+connPort)
+// 	reader := bufio.NewReader(os.Stdin)
+// 	for {
 
-		input := "SELECT * from dual"
+// 		input := "SELECT * from dual"
 
-		message, _ := bufio.NewReader(conn).ReadString('\n')
+// 		message, _ := bufio.NewReader(conn).ReadString('\n')
 
-		log.Print("Server relay:", message)
-	}
+// 		log.Print("Server relay:", message)
+// 	}
 
-}
+// }
 
 func main() {
 	// testBTree1()
 	// testBTree2()
-	generateFile(100000, "src/resources/BigData.csv")
+	testBTree3()
+	// generateFile(100000, "src/resources/BigData.csv")
 }
