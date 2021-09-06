@@ -113,3 +113,17 @@ func PrintTokens(st string) {
 		fmt.Printf("%s\n", tok)
 	}
 }
+
+// FullTokenize -> tokenize
+func FullTokenize(st string) []string {
+	result := []string{}
+	tokenizer := NewTokenizer(st)
+	for {
+		tok := tokenizer.nextToken()
+		if tok == "" {
+			break
+		}
+		result = append(result, tok)
+	}
+	return result
+}

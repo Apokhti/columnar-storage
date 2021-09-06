@@ -65,13 +65,14 @@ func main() {
 	// for {
 	// 	command := getCommand()
 	// 	if command == "1" {
-	// 		inputCSV()
 	// 	} else if command == "2" {
 	// 		// inputQuerry()
 	// 	}
 	// 	break
 	// }
 
-	// manager.IndexBy("id", "data/myFile/id", fs, manager.IntType)
-	server.ServeRequests()
+	inputCSV()
+	server.ServeRequests(fs)
+	// manager.IndexBy("ID", "data/myFile/"+"ID", fs, manager.IntType)
+
 }

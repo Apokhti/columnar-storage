@@ -214,8 +214,9 @@ func removePartitions(columns []ColumnStruct, partitionName string) {
 
 // Patition merge code
 func mergePartitions(columnName string, filename string, partitionFilenames []string, columns []ColumnStruct, columnType VariableType) {
-	fmt.Printf("Starting merging: %v\n", partitionFilenames)
 	dirpath, _ := os.Getwd()
+	fmt.Printf("Starting merging: %v dirpath %v\n", partitionFilenames, dirpath)
+
 	for {
 		if len(partitionFilenames) == 1 {
 			for i := range columns {
@@ -317,7 +318,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 		}
 
 	}
-	fmt.Printf("%v %v\n", r1End, r2End)
+	// fmt.Printf("%v %v\n", r1End, r2End)
 
 	if r1End {
 		for {
@@ -369,7 +370,7 @@ func sortPartitionFile(fileName string, columnType VariableType) {
 		records = append(records, curRecord)
 	}
 	sorted := sortInMemory(records, columnType)
-	fmt.Printf("%v\n", sorted)
+	// fmt.Printf("%v\n", sorted)
 
 	f1, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	defer f1.Close()
@@ -377,8 +378,8 @@ func sortPartitionFile(fileName string, columnType VariableType) {
 		f1.WriteString(record + string(delimiter))
 	}
 
-	indices := getVirtualIndices(fileName)
-	fmt.Printf("%v indices", indices)
+	// indices := getVirtualIndices(fileName)
+	// fmt.Printf("%v indices", indices)
 }
 
 // Sorts in RAM

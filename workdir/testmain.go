@@ -192,20 +192,29 @@ func randomPos(arr []string) string {
 	return arr[rand.Intn(len(arr))]
 }
 
-func testSimpleQuery() {
+func testSimpleIndexQuery() {
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
-	for {
 
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Text to send: ")
-		text, _ := reader.ReadString('\n')
-		// send to server
-		fmt.Fprintf(conn, text+"\n")
+	text := "INDEX BY ID INT"
+	// send to server
+	fmt.Fprintf(conn, text+"\n")
 
-		message, _ := bufio.NewReader(conn).ReadString('\n')
+	message, _ := bufio.NewReader(conn).ReadString('\n')
 
-		log.Print("Massage: ", message)
-	}
+	log.Print("Massage: ", message)
+
+}
+
+func testSimpleSelectQuery() {
+	conn, _ := net.Dial(connType, connHost+":"+connPort)
+
+	text := "Select Name from dual where ID > 100"
+	// send to server
+	fmt.Fprintf(conn, text+"\n")
+
+	message, _ := bufio.NewReader(conn).ReadString('\n')
+
+	log.Print("Massage: ", message)
 
 }
 
@@ -213,5 +222,5 @@ func main() {
 	// testBTree1()
 	// testBTree2()
 	// generateFile(100000, "src/resources/BigData.csv")
-	testSimpleQuery()
+	testSimpleSelectQuery()
 }
