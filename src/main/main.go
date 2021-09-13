@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"cs/src/main/manager"
-	"cs/src/main/server"
 )
 
 var fs manager.TableData
@@ -72,7 +71,16 @@ func main() {
 	// }
 
 	inputCSV()
-	server.ServeRequests(fs)
-	// manager.IndexBy("ID", "data/myFile/"+"ID", fs, manager.IntType)
+	// server.ServeRequests(fs)
+	manager.IndexBy("ID", "data/myFile/"+"ID", fs, manager.IntType)
+	// f, _ := os.Open("data/myFile/ID")
+	// reader := manager.NewRecordReader(f)
+	// for {
+	// 	next, err := reader.NextRecordBuffered()
+	// 	// fmt.Printf("%v nnn\n", next)
+	// 	if err == io.EOF {
+	// 		break
+	// 	}
 
+	// }
 }

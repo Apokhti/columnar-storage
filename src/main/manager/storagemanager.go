@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const buffer_size = 40
+const buffer_size = 5
 const maxRecord = 5000
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
@@ -26,6 +26,12 @@ const (
 	// StringType is string
 	StringType
 )
+
+type RecordReader struct {
+	buffer []byte
+	offset int
+	r      *bufio.Reader
+}
 
 /**
 * One of the most challanging problem was external sorting.
@@ -81,6 +87,7 @@ func sortFile(columnName string, fileName string, columns []ColumnStruct, column
 		return false
 	}
 	partitionFilenames := partitionFile(fileName, columnType)
+	fmt.Printf("%v filenames\n", partitionFilenames)
 	for _, column := range columns {
 		partitionFile(column.ColumnFilePath, columnType)
 	}
@@ -92,6 +99,7 @@ func sortFile(columnName string, fileName string, columns []ColumnStruct, column
 		for i := range columns {
 			sortByVirtualIndices(indices, columns[i].ColumnFilePath+partitionKeyword+partitionName)
 		}
+		break
 	}
 
 	mergePartitions(columnName, fileName, partitionFilenames, columns, columnType)
@@ -103,11 +111,12 @@ func sortFile(columnName string, fileName string, columns []ColumnStruct, column
 func sortByVirtualIndices(indices []int, partitionFilename string) {
 	f, _ := os.Open(partitionFilename)
 	defer f.Close()
-	r := bufio.NewReader(f)
+	r := NewRecordReader(f)
 
 	result := []string{}
 	for {
-		curRecord, err := NextRecord(r)
+		curRecord, err := r.NextRecordBuffered()
+		fmt.Printf("%v\n", curRecord)
 		if err == io.EOF && curRecord == "" {
 			break
 		}
@@ -150,11 +159,10 @@ func partitionFile(filename string, columnType VariableType) []string {
 	text := ""
 	curNumRecords := 0
 	nChunks := int64(0)
-	r := bufio.NewReader(f)
+	r := NewRecordReader(f)
 	paritionFilenames := []string{}
 	for {
-		curRecord, err := NextRecord(r)
-
+		curRecord, err := r.NextRecordBuffered()
 		if curRecord != "" {
 			text += curRecord + string(delimiter)
 		}
@@ -163,6 +171,8 @@ func partitionFile(filename string, columnType VariableType) []string {
 				nChunks++
 				paritionName := filename + partitionKeyword + fmt.Sprint(nChunks)
 				paritionFilenames = append(paritionFilenames, fmt.Sprint(nChunks))
+				fmt.Printf("TXT %v\n", text)
+
 				createPartitionFile(text, paritionName)
 			}
 			break
@@ -174,6 +184,7 @@ func partitionFile(filename string, columnType VariableType) []string {
 			paritionName := filename + partitionKeyword + fmt.Sprint(nChunks)
 			paritionFilenames = append(paritionFilenames, fmt.Sprint(nChunks))
 			createPartitionFile(text, paritionName)
+			fmt.Printf("TXT %v\n", text)
 			text, curNumRecords = "", 0
 		}
 	}
@@ -182,13 +193,14 @@ func partitionFile(filename string, columnType VariableType) []string {
 
 // Returns virtual indices sequence
 func getVirtualIndices(filename string) []int {
+	fmt.Printf("filename %v\n", filename)
 	result := []int{}
 	f, _ := os.Open(filename)
 	defer f.Close()
-	r := bufio.NewReader(f)
+	r := NewRecordReader(f)
 
 	for {
-		curRecord, err := NextRecord(r)
+		curRecord, err := r.NextRecordBuffered()
 		if err == io.EOF && curRecord == "" {
 			break
 		}
@@ -265,14 +277,13 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 	defer f1.Close()
 	defer f2.Close()
 
-	r1 := bufio.NewReader(f1)
-	r2 := bufio.NewReader(f2)
+	r1 := NewRecordReader(f1)
+	r2 := NewRecordReader(f2)
 
 	r1End, r2End := false, false
 
-	a, err1 := NextRecord(r1)
-	b, err2 := NextRecord(r2)
-
+	a, err1 := r1.NextRecordBuffered()
+	b, err2 := r2.NextRecordBuffered()
 	files := make([]*os.File, len(columns))
 
 	files1 := make([]*os.File, len(columns))
@@ -309,12 +320,12 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			writeRecords(files, bs)
 			// f.WriteString(b + string(delimiter))
 			bs = NextRecords(readers2)
-			b, err2 = NextRecord(r2)
+			b, err2 = r2.NextRecordBuffered()
 		} else {
 			writeRecords(files, as)
 			// f.WriteString(a + string(delimiter))
 			as = NextRecords(readers1)
-			a, err1 = NextRecord(r1)
+			a, err1 = r1.NextRecordBuffered()
 		}
 
 	}
@@ -328,7 +339,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			writeRecords(files, bs)
 			// f.WriteString(b + string(delimiter))
 			bs = NextRecords(readers2)
-			b, err2 = NextRecord(r2)
+			b, err2 = r2.NextRecordBuffered()
 		}
 	}
 
@@ -340,7 +351,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			writeRecords(files, as)
 			// f.WriteString(a + string(delimiter))
 			as = NextRecords(readers1)
-			a, err1 = NextRecord(r1)
+			a, err1 = r1.NextRecordBuffered()
 		}
 	}
 }
@@ -357,10 +368,10 @@ func sortPartitionFile(fileName string, columnType VariableType) {
 	// fmt.Printf("Sorting")
 	records := []string{}
 	f, _ := os.Open(fileName)
-	r := bufio.NewReader(f)
+	r := NewRecordReader(f)
 	defer f.Close()
 	for {
-		curRecord, err := NextRecord(r)
+		curRecord, err := r.NextRecordBuffered()
 
 		if err == io.EOF && curRecord == "" {
 			break
@@ -471,5 +482,47 @@ func NextRecord(r *bufio.Reader) (string, error) {
 		}
 		record = record + string(b)
 	}
+	return record, nil
+}
+
+func NewRecordReader(f *os.File) *RecordReader {
+	result := RecordReader{offset: 0}
+	r := bufio.NewReader(f)
+	result.r = r
+	result.buffer = make([]byte, buffer_size)
+	result.r.Read(result.buffer)
+	return &result
+}
+
+//
+func (rd *RecordReader) NextRecordBuffered() (string, error) {
+	record := ""
+	nn := -1
+	for {
+		if rd.offset >= len(rd.buffer) {
+			n, err := rd.r.Read(rd.buffer)
+
+			rd.buffer = rd.buffer[:n]
+			nn = n
+			if n == 0 {
+				if err == nil {
+					continue
+				}
+				return record, io.EOF
+			}
+			rd.offset = 0
+		}
+		if rd.offset == nn {
+			return record, io.EOF
+		}
+		character := rd.buffer[rd.offset]
+		if character == delimiter {
+			rd.offset++
+			break
+		}
+		record = record + string(character)
+		rd.offset++
+	}
+
 	return record, nil
 }

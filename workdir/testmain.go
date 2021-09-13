@@ -274,7 +274,7 @@ func testSimpleIndexQuery() {
 func testSimpleSelectQuery() {
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
 
-	text := "select (ID*2)+3, Email, Name from base where ID <  10;"
+	text := "select (ID*2)+7, Email, Name from base where ID <  10;"
 	// send to server
 	fmt.Fprintf(conn, text+"\n")
 
@@ -290,6 +290,6 @@ func main() {
 	// testBTree3()
 	// generateFile(100000, "src/resources/BigData.csv")
 	// generateFile(100000, "src/resources/BigData.csv")
-	testSimpleIndexQuery()
-	// testSimpleSelectQuery()
+	// testSimpleIndexQuery()
+	testSimpleSelectQuery()
 }
