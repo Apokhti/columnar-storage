@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const buffer_size = 5
+const buffer_size = 2000
 const maxRecord = 5000
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
@@ -28,9 +28,10 @@ const (
 )
 
 type RecordReader struct {
-	buffer []byte
-	offset int
-	r      *bufio.Reader
+	buffer     []byte
+	offset     int
+	fullOffset int
+	r          *bufio.Reader
 }
 
 /**
@@ -113,7 +114,7 @@ func sortByVirtualIndices(indices []int, partitionFilename string) {
 
 	result := []string{}
 	for {
-		curRecord, err := r.NextRecordBuffered()
+		curRecord, err, _ := r.NextRecordBuffered()
 		if err == io.EOF && curRecord == "" {
 			break
 		}
@@ -159,7 +160,7 @@ func partitionFile(filename string, columnType VariableType) []string {
 	r := NewRecordReader(f)
 	paritionFilenames := []string{}
 	for {
-		curRecord, err := r.NextRecordBuffered()
+		curRecord, err, _ := r.NextRecordBuffered()
 		if curRecord != "" {
 			text += curRecord + string(delimiter)
 		}
@@ -195,7 +196,7 @@ func getVirtualIndices(filename string) []int {
 	r := NewRecordReader(f)
 
 	for {
-		curRecord, err := r.NextRecordBuffered()
+		curRecord, err, _ := r.NextRecordBuffered()
 		if err == io.EOF && curRecord == "" {
 			break
 		}
@@ -257,7 +258,7 @@ func NextRecords(readers []*bufio.Reader) []string {
 func NextRecordsBuffered(readers []*RecordReader) []string {
 	result := make([]string, len(readers))
 	for i, r := range readers {
-		result[i], _ = r.NextRecordBuffered()
+		result[i], _, _ = r.NextRecordBuffered()
 	}
 	return result
 }
@@ -285,8 +286,8 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 
 	r1End, r2End := false, false
 
-	a, err1 := r1.NextRecordBuffered()
-	b, err2 := r2.NextRecordBuffered()
+	a, err1, _ := r1.NextRecordBuffered()
+	b, err2, _ := r2.NextRecordBuffered()
 	files := make([]*os.File, len(columns))
 
 	files1 := make([]*os.File, len(columns))
@@ -323,12 +324,12 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			writeRecords(files, bs)
 			// f.WriteString(b + string(delimiter))
 			bs = NextRecordsBuffered(readers2)
-			b, err2 = r2.NextRecordBuffered()
+			b, err2, _ = r2.NextRecordBuffered()
 		} else {
 			writeRecords(files, as)
 			// f.WriteString(a + string(delimiter))
 			as = NextRecordsBuffered(readers1)
-			a, err1 = r1.NextRecordBuffered()
+			a, err1, _ = r1.NextRecordBuffered()
 		}
 
 	}
@@ -342,7 +343,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			writeRecords(files, bs)
 			// f.WriteString(b + string(delimiter))
 			bs = NextRecordsBuffered(readers2)
-			b, err2 = r2.NextRecordBuffered()
+			b, err2, _ = r2.NextRecordBuffered()
 		}
 	}
 
@@ -354,7 +355,7 @@ func mergeTwoFiles(filename string, partitionFirst string, partitionSecond strin
 			writeRecords(files, as)
 			// f.WriteString(a + string(delimiter))
 			as = NextRecordsBuffered(readers1)
-			a, err1 = r1.NextRecordBuffered()
+			a, err1, _ = r1.NextRecordBuffered()
 		}
 	}
 }
@@ -374,7 +375,7 @@ func sortPartitionFile(fileName string, columnType VariableType) {
 	r := NewRecordReader(f)
 	defer f.Close()
 	for {
-		curRecord, err := r.NextRecordBuffered()
+		curRecord, err, _ := r.NextRecordBuffered()
 
 		if err == io.EOF && curRecord == "" {
 			break
@@ -489,7 +490,7 @@ func NextRecord(r *bufio.Reader) (string, error) {
 }
 
 func NewRecordReader(f *os.File) *RecordReader {
-	result := RecordReader{offset: 0}
+	result := RecordReader{offset: 0, fullOffset: 0}
 	r := bufio.NewReader(f)
 	result.r = r
 	result.buffer = make([]byte, buffer_size)
@@ -498,9 +499,10 @@ func NewRecordReader(f *os.File) *RecordReader {
 }
 
 //
-func (rd *RecordReader) NextRecordBuffered() (string, error) {
+func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 	record := ""
 	nn := -1
+	resOffset := rd.fullOffset
 	for {
 		if rd.offset >= len(rd.buffer) {
 			n, err := rd.r.Read(rd.buffer)
@@ -511,21 +513,23 @@ func (rd *RecordReader) NextRecordBuffered() (string, error) {
 				if err == nil {
 					continue
 				}
-				return record, io.EOF
+				return record, io.EOF, resOffset
 			}
 			rd.offset = 0
 		}
 		if rd.offset == nn {
-			return record, io.EOF
+			return record, io.EOF, resOffset
 		}
 		character := rd.buffer[rd.offset]
 		if character == delimiter {
 			rd.offset++
+			rd.fullOffset++
 			break
 		}
 		record = record + string(character)
 		rd.offset++
+		rd.fullOffset++
 	}
 
-	return record, nil
+	return record, nil, resOffset
 }
