@@ -43,6 +43,7 @@
 data/
 /main
 BigData.csv
+huge-data
 /names.txt
 /testmain.go
 /test-folder/

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"bufio"
+	"cs/src/main/btree"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -60,6 +61,41 @@ func fileExists(columnPath string) bool {
 	return true
 }
 
+func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct) error {
+	var filesReaderMap map[string]*bufio.Reader = make(map[string]*bufio.Reader)
+	var filesTreeMap map[string]*btree.Tree = make(map[string]*btree.Tree)
+	var filesOffsetMap map[string]int64 = make(map[string]int64)
+
+	for _, name := range *columns {
+		file, err := os.Open(indexDirPath + "/" + name.ColumnName)
+		if err != nil {
+			return err
+		}
+		filesReaderMap[name.ColumnName] = bufio.NewReader(file)
+		tree, err := btree.CreateTree(indexDirPath + "/" + name.ColumnName + ".idx")
+		if err != nil {
+			return err
+		}
+		filesTreeMap[name.ColumnName] = tree
+		filesOffsetMap[name.ColumnName] = 0
+	}
+
+	for {
+		record, err, newOffset := nextRecordAndOffset(filesOffsetMap[indexColumn], filesReaderMap[indexColumn])
+		if err != nil {
+			return err
+		}
+		if record == "" {
+			return nil
+		}
+
+		arr := strings.Split(record, ")")
+		filesOffsetMap[indexColumn] = newOffset
+	}
+
+	return nil
+}
+
 // IndexBy - Creates index by column
 func IndexBy(columnName string, path string, fs TableData, columnType VariableType) {
 	//TODO yvela
@@ -74,6 +110,8 @@ func IndexBy(columnName string, path string, fs TableData, columnType VariableTy
 		IndexColumnName: columnName,
 		IndexDirPath:    dirpath + dataPath + columnName + "-Indexed",
 	})
+
+	makeBTree(columnName, dirpath+dataPath+columnName+"-Indexed/", &fs.Columns)
 
 	err := fs.StoreTableMap()
 	if err != nil {
@@ -525,4 +563,19 @@ func (rd *RecordReader) NextRecordBuffered() (string, error) {
 	}
 
 	return record, nil
+}
+
+func nextRecordAndOffset(offset int64, r *bufio.Reader) (string, error, int64) {
+	record := ""
+	for {
+		b, err := r.ReadByte()
+		if err == io.EOF {
+			return record, err, -1
+		} else if b == delimiter {
+			break
+		}
+		offset++
+		record = record + string(b)
+	}
+	return record, nil, offset
 }

@@ -77,7 +77,7 @@ func testBTree1() {
 		sum += duration.Microseconds()
 	}
 
-	fmt.Printf("ended inserting values averageTime: %vms\r\n", sum/1000000.0)
+	fmt.Printf("ended inserting values averageTime: %vmcs\r\n", sum/1000000.0)
 
 	var correct int = 0
 	sum = 0
@@ -92,7 +92,7 @@ func testBTree1() {
 		dur := time.Since(start)
 		sum += dur.Microseconds()
 	}
-	fmt.Printf("correct values got: %v\r\naverage Get time: %vms\r\n", correct, sum/1000000.0)
+	fmt.Printf("correct values got: %v\r\naverage Get time: %vmcs\r\n", correct, sum/1000000.0)
 }
 
 func testBTree2() {
@@ -125,7 +125,7 @@ func testBTree2() {
 		sum += duration.Microseconds()
 	}
 
-	fmt.Printf("ended inserting values averageTime: %vms\r\n", sum/1000000.0)
+	fmt.Printf("ended inserting values averageTime: %vmcs\r\n", sum/1000000.0)
 
 	tree, err = btree.LoadTree("test-folder/ind.tst")
 	if err != nil {
@@ -145,7 +145,7 @@ func testBTree2() {
 		dur := time.Since(start)
 		sum += dur.Microseconds()
 	}
-	fmt.Printf("correct values got: %v\r\naverage Get time: %vms\r\n", correct, sum/1000000.0)
+	fmt.Printf("correct values got: %v\r\naverage Get time: %vmcs\r\n", correct, sum/1000000.0)
 }
 
 func testBTree3() {
@@ -180,7 +180,7 @@ func testBTree3() {
 		sum += duration.Microseconds()
 	}
 
-	fmt.Printf("ended inserting values averageTime: %vms\r\n", 1.0*sum/int64(cntRecords))
+	fmt.Printf("ended inserting values averageTime: %vmcs\r\n", 1.0*sum/int64(cntRecords))
 
 	sort.SliceStable(arr, func(i, j int) bool {
 		return arr[i] < arr[j]
@@ -210,7 +210,7 @@ func testBTree3() {
 		dur := time.Since(start)
 		sum += dur.Microseconds()
 	}
-	fmt.Printf("correct values got: %v\r\naverage Get time: %vms\r\n", correct, 1.0*sum/int64(cntRecords))
+	fmt.Printf("correct values got: %v\r\naverage Get time: %vmcs\r\n", correct, 1.0*sum/int64(cntRecords))
 }
 
 func loadNames() []string {
@@ -292,4 +292,10 @@ func main() {
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleIndexQuery()
 	testSimpleSelectQuery()
+	testBTree1()
+	testBTree2()
+	testBTree3()
+	// generateFile(100000, "src/resources/BigData.csv")
+	// generateFile(100000, "src/resources/BigData.csv")
+	// testSimpleSelectQuery()
 }
