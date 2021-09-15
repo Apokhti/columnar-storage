@@ -25,9 +25,9 @@ func readCSV(fileName string) {
 	}
 
 	sort.Ints(keys)
-	for _, k := range keys {
-		fmt.Println("Key:", k, "Value:", fs.MapOfData[k])
-	}
+	// for _, k := range keys {
+	// 	fmt.Println("Key:", k, "Value:", fs.MapOfData[k])
+	// }
 
 }
 
@@ -53,14 +53,14 @@ func main() {
 	// 	break
 	// }
 
-	fileName := "src/resources/myFile.csv"
+	fileName := "src/resources/BigData.csv"
 
 	// for ind, fileName := range os.Args[1:] {
 	// 	fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
 	readCSV(fileName)
 	// }
 	// server.ServeRequests(fs)
-	manager.IndexBy("id", "data/myFile/"+"id", fs, manager.StringType)
+	manager.IndexBy("ID", "data/myFile/"+"ID", fs, manager.StringType)
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)
 	// for {

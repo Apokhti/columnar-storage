@@ -12,7 +12,7 @@ import (
 )
 
 const buffer_size = 1000
-const maxRecord = 1000
+const maxRecord = 500
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
 const dataPath = "/data/"
