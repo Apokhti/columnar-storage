@@ -2,6 +2,7 @@ package manager
 
 import (
 	"bufio"
+	"cs/src/main/btree"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-const buffer_size = 2000
+const buffer_size = 1000
 const maxRecord = 1000
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
@@ -33,6 +34,7 @@ type RecordReader struct {
 	offset     int
 	fullOffset int
 	r          *bufio.Reader
+	n          int
 }
 
 /**
@@ -62,6 +64,61 @@ func fileExists(columnPath string) bool {
 	return true
 }
 
+func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct) error {
+	var filesReaderMap map[string]*RecordReader = make(map[string]*RecordReader)
+	var filesTreeMap map[string]*btree.Tree = make(map[string]*btree.Tree)
+	var filesOffsetMap map[string]int64 = make(map[string]int64)
+
+	for _, name := range *columns {
+		file, err := os.Open(indexDirPath + "/" + name.ColumnName)
+		if err != nil {
+			return err
+		}
+		filesReaderMap[name.ColumnName] = NewRecordReader(file)
+		tree, err := btree.CreateTree(indexDirPath + "/" + name.ColumnName + ".idx")
+		if err != nil {
+			return err
+		}
+		filesTreeMap[name.ColumnName] = tree
+		filesOffsetMap[name.ColumnName] = 0
+	}
+
+	for {
+		record, err, offset := filesReaderMap[indexColumn].NextRecordBuffered()
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if record == "" {
+			return nil
+		}
+		record = extractRecord(record)
+		intVal, err := strconv.ParseInt(record, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		filesTreeMap[indexColumn].InsertValue(intVal, int64(offset))
+
+		for _, column := range *columns {
+			if column.ColumnName == indexColumn {
+				continue
+			}
+			_, err, offset = filesReaderMap[indexColumn].NextRecordBuffered()
+
+			if err != nil {
+				return err
+			}
+			err = filesTreeMap[column.ColumnName].InsertValue(intVal, int64(offset))
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // IndexBy - Creates index by column
 func IndexBy(columnName string, path string, fs TableData, columnType VariableType) {
 	//TODO yvela
@@ -75,6 +132,8 @@ func IndexBy(columnName string, path string, fs TableData, columnType VariableTy
 		IndexColumnName: columnName,
 		IndexDirPath:    dirpath + dataPath + columnName + "-Indexed",
 	})
+
+	// makeBTree(columnName, dirpath+dataPath+columnName+"-Indexed/", &fs.Columns)
 
 	err := fs.StoreTableMap()
 	if err != nil {
@@ -525,25 +584,23 @@ func NewRecordReader(f *os.File) *RecordReader {
 	r := bufio.NewReader(f)
 	result.r = r
 	result.buffer = make([]byte, buffer_size)
-	result.r.Read(result.buffer)
+	result.n, _ = result.r.Read(result.buffer)
 	return &result
 }
 
 //
 func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 	record := ""
-	nn := -1
 	resOffset := rd.fullOffset
+	nn := rd.n
 	for {
 		if rd.offset >= len(rd.buffer) {
-			n, err := rd.r.Read(rd.buffer)
+			n, _ := rd.r.Read(rd.buffer[:cap(rd.buffer)])
 
 			rd.buffer = rd.buffer[:n]
 			nn = n
+
 			if n == 0 {
-				if err == nil {
-					continue
-				}
 				return record, io.EOF, resOffset
 			}
 			rd.offset = 0
@@ -551,6 +608,7 @@ func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 		if rd.offset == nn {
 			return record, io.EOF, resOffset
 		}
+
 		character := rd.buffer[rd.offset]
 		if character == delimiter {
 			rd.offset++
@@ -561,6 +619,20 @@ func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 		rd.offset++
 		rd.fullOffset++
 	}
-
 	return record, nil, resOffset
+}
+
+func nextRecordAndOffset(offset int64, r *bufio.Reader) (string, error, int64) {
+	record := ""
+	for {
+		b, err := r.ReadByte()
+		if err == io.EOF {
+			return record, err, -1
+		} else if b == delimiter {
+			break
+		}
+		offset++
+		record = record + string(b)
+	}
+	return record, nil, offset
 }
