@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sort"
 
 	"cs/src/main/manager"
@@ -31,23 +32,6 @@ func readCSV(fileName string) {
 
 }
 
-func inputCSV() {
-	fileName := "src/resources/BigData.csv" //getFileName()
-	readCSV(fileName)
-}
-
-func getCommand() string {
-	return "1"
-	// reader := bufio.NewReader(os.Stdin)
-	// fmt.Print(`Choose action
-	// 	1: add Csv File
-	// 	2: write Query
-	// 	`)
-	// command, _ := reader.ReadString('\n')
-	// command = command[:len(command)-1]
-	// return command
-}
-
 func main() {
 	// query_str := "select my_file, bla from base where myfile < d ;"
 	// // fmt.Printf("%s\n", query_str)
@@ -70,9 +54,12 @@ func main() {
 	// 	break
 	// }
 
-	inputCSV()
+	for ind, fileName := range os.Args[1:] {
+		fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
+		readCSV(fileName)
+	}
 	// server.ServeRequests(fs)
-	manager.IndexBy("Name", "data/myFile/"+"Name", fs, manager.IntType)
+	manager.IndexBy("Id", "data/myFile/"+"Id1", fs, manager.IntType)
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)
 	// for {

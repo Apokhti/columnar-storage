@@ -63,7 +63,7 @@ func fileExists(columnPath string) bool {
 }
 
 func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct) error {
-	var filesReaderMap map[string]*bufio.Reader = make(map[string]*bufio.Reader)
+	var filesReaderMap map[string]*RecordReader = make(map[string]*RecordReader)
 	var filesTreeMap map[string]*btree.Tree = make(map[string]*btree.Tree)
 	var filesOffsetMap map[string]int64 = make(map[string]int64)
 
@@ -72,7 +72,7 @@ func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct)
 		if err != nil {
 			return err
 		}
-		filesReaderMap[name.ColumnName] = bufio.NewReader(file)
+		filesReaderMap[name.ColumnName] = NewRecordReader(file)
 		tree, err := btree.CreateTree(indexDirPath + "/" + name.ColumnName + ".idx")
 		if err != nil {
 			return err
@@ -82,16 +82,36 @@ func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct)
 	}
 
 	for {
-		record, err, newOffset := nextRecordAndOffset(filesOffsetMap[indexColumn], filesReaderMap[indexColumn])
-		if err != nil {
+		record, err, offset := filesReaderMap[indexColumn].NextRecordBuffered()
+		if err != nil && err != io.EOF {
 			return err
 		}
 		if record == "" {
 			return nil
 		}
+		record = extractRecord(record)
+		intVal, err := strconv.ParseInt(record, 10, 64)
+		if err != nil {
+			return err
+		}
 
-		arr := strings.Split(record, ")")
-		filesOffsetMap[indexColumn] = newOffset
+		filesTreeMap[indexColumn].InsertValue(intVal, int64(offset))
+
+		for _, column := range *columns {
+			if column.ColumnName == indexColumn {
+				continue
+			}
+			_, err, offset = filesReaderMap[indexColumn].NextRecordBuffered()
+
+			if err != nil {
+				return err
+			}
+			err = filesTreeMap[column.ColumnName].InsertValue(intVal, int64(offset))
+
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

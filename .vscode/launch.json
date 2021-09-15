@@ -19,7 +19,10 @@
             "mode": "debug",
             "program": "${workspaceFolder}/src/main/main.go",
             "preLaunchTask": "build",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "src/resources/myFile.csv"
+            ]
         }
     ]
 }
