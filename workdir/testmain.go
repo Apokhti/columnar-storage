@@ -259,6 +259,27 @@ func randomPos(arr []string) string {
 	return arr[rand.Intn(len(arr))]
 }
 
+func testNextRecord() {
+	f, _ := os.Open("data/myFile/" + "Age")
+	rc := manager.NewRecordReader(f)
+
+	i := 0
+	rt := ""
+	oft := 0
+
+	for i < 9998 {
+		rt, _, oft = rc.NextRecordBuffered()
+		fmt.Printf("%v -  %v\n", oft, rt)
+		i++
+	}
+
+	fmt.Printf("%v rt\n", oft)
+	bb := make([]byte, 20)
+	f.ReadAt(bb, int64(oft))
+	fmt.Printf("%v\n", string(bb))
+
+}
+
 func testSimpleIndexQuery() {
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
 
@@ -297,14 +318,18 @@ func main() {
 	// testBTree1()
 	// testBTree2()
 	// testBTree3()
-	// generateFile(100000, "src/resources/BigData.csv")
+	// generateFile(1000000, "src/resources/BigData.csv")
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleIndexQuery()
 	// testSimpleSelectQuery()
 	// testBTree1()
 	// testBTree2()
 	// testBTree3()
+<<<<<<< HEAD
 	// generateFile(100000, "src/resources/BigData.csv")
+=======
+	generateFile(100000, "src/resources/BigData.csv")
+>>>>>>> db7b70e5806be7d56feadf7802ab9090cf9349e3
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleSelectQuery()
 	testTablesData()

@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-const buffer_size = 2000
-const maxRecord = 1000
+const buffer_size = 1000
+const maxRecord = 500
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
 const dataPath = "/data/"
@@ -35,6 +35,7 @@ type RecordReader struct {
 	offset     int
 	fullOffset int
 	r          *bufio.Reader
+	n          int
 }
 
 /**
@@ -125,7 +126,7 @@ func IndexBy(columnName string, path string, fs TableData, columnType VariableTy
 		IndexDirPath:    dirpath + dataPath + columnName + "-Indexed",
 	})
 
-	makeBTree(columnName, dirpath+dataPath+columnName+"-Indexed/", &fs.Columns)
+	// makeBTree(columnName, dirpath+dataPath+columnName+"-Indexed/", &fs.Columns)
 
 	err := fs.StoreTableMap()
 	if err != nil {
@@ -576,25 +577,23 @@ func NewRecordReader(f *os.File) *RecordReader {
 	r := bufio.NewReader(f)
 	result.r = r
 	result.buffer = make([]byte, buffer_size)
-	result.r.Read(result.buffer)
+	result.n, _ = result.r.Read(result.buffer)
 	return &result
 }
 
 //
 func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 	record := ""
-	nn := -1
 	resOffset := rd.fullOffset
+	nn := rd.n
 	for {
 		if rd.offset >= len(rd.buffer) {
-			n, err := rd.r.Read(rd.buffer)
+			n, _ := rd.r.Read(rd.buffer[:cap(rd.buffer)])
 
 			rd.buffer = rd.buffer[:n]
 			nn = n
+
 			if n == 0 {
-				if err == nil {
-					continue
-				}
 				return record, io.EOF, resOffset
 			}
 			rd.offset = 0
@@ -602,6 +601,7 @@ func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 		if rd.offset == nn {
 			return record, io.EOF, resOffset
 		}
+
 		character := rd.buffer[rd.offset]
 		if character == delimiter {
 			rd.offset++
@@ -612,7 +612,6 @@ func (rd *RecordReader) NextRecordBuffered() (string, error, int) {
 		rd.offset++
 		rd.fullOffset++
 	}
-
 	return record, nil, resOffset
 }
 

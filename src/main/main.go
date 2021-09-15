@@ -57,6 +57,14 @@ func main() {
 	}
 	// server.ServeRequests(fs)
 	// manager.IndexBy("id", "data/BigData/"+"id", fs, manager.IntType)
+	fileName := "src/resources/BigData.csv"
+
+	// for ind, fileName := range os.Args[1:] {
+	// 	fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
+	readCSV(fileName)
+	// }
+	// server.ServeRequests(fs)
+	manager.IndexBy("ID", "data/myFile/"+"ID", fs, manager.StringType)
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)
 	// for {
@@ -67,4 +75,5 @@ func main() {
 	// 	}
 
 	// }
+
 }
