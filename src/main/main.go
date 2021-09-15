@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sort"
+	"os"
+	"path/filepath"
 
 	"cs/src/main/manager"
 )
@@ -12,22 +13,16 @@ var fs manager.TableData
 func readCSV(fileName string) {
 	fmt.Println("reading file", fileName)
 
-	fs.CreateStructure("myFile", fileName)
+	// extract table name from path
+	tableName := filepath.Base(fileName)
+	tableName = tableName[:len(tableName)-4]
+
+	fs.CreateStructure(tableName, fileName)
 	fmt.Println("TableName: " + fs.TableName)
 
 	for _, value := range fs.Columns {
 		fmt.Println("ColumnStructMassive", ":", value.ColumnName)
 	}
-
-	keys := make([]int, 0)
-	for k := range fs.MapOfData {
-		keys = append(keys, k)
-	}
-
-	sort.Ints(keys)
-	// for _, k := range keys {
-	// 	fmt.Println("Key:", k, "Value:", fs.MapOfData[k])
-	// }
 
 }
 
@@ -53,13 +48,16 @@ func main() {
 	// 	break
 	// }
 
-	fileName := "src/resources/myFile.csv"
-
-	// for ind, fileName := range os.Args[1:] {
-	// 	fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
-	readCSV(fileName)
-	// }
+	for ind, fileName := range os.Args {
+		if ind == 0 {
+			continue
+		}
+		fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
+		readCSV(fileName)
+	}
 	// server.ServeRequests(fs)
+	// manager.IndexBy("id", "data/BigData/"+"id", fs, manager.IntType)
+	// }
 	manager.IndexBy("id", "data/myFile/"+"id", "myFile", fs, manager.StringType)
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)

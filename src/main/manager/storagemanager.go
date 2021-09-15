@@ -3,6 +3,7 @@ package manager
 import (
 	"bufio"
 	"cs/src/main/btree"
+	"cs/src/main/utils"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -54,14 +55,6 @@ func ListAllColumns(path string) []string {
 		}
 	}
 	return result
-}
-
-// Decides if column with given name exists
-func fileExists(columnPath string) bool {
-	if _, err := os.Stat(columnPath); os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
 
 func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct) error {
@@ -142,7 +135,7 @@ func IndexBy(columnName string, path string, tablename string, fs TableData, col
 
 // Sorts file by External Sorting
 func sortFile(columnName string, fileName string, tablename string, columns []ColumnStruct, columnType VariableType) bool {
-	if !fileExists(fileName) {
+	if !utils.FileExists(fileName) {
 		return false
 	}
 	partitionFilenames := partitionFile(fileName, columnType)

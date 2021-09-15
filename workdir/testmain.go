@@ -306,6 +306,14 @@ func testSimpleSelectQuery() {
 
 }
 
+func testTablesData() {
+	manager.AddTableToList("this")
+	manager.AddTableToList("that")
+	if !manager.TableAlreadyExists("this") {
+		fmt.Println("error table management not working")
+	}
+}
+
 func main() {
 	// testBTree1()
 	// testBTree2()
@@ -320,4 +328,5 @@ func main() {
 	generateFile(100000, "src/resources/BigData.csv")
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleSelectQuery()
+	testTablesData()
 }

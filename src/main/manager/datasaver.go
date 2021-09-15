@@ -23,7 +23,6 @@ type TableData struct {
 	TableDirPath string
 	Indexes      []IndexData
 	Columns      []ColumnStruct
-	MapOfData    map[int][]int64 `json:"-"`
 }
 
 type IndexData struct {
@@ -45,7 +44,6 @@ type ColumnStruct struct {
 // Creates CSV structure
 func (fs *TableData) CreateStructure(tableName, filePath string) error {
 	fs.TableName = tableName
-	fs.MapOfData = make(map[int][]int64)
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -81,7 +79,7 @@ func (fs *TableData) CreateStructure(tableName, filePath string) error {
 
 	fs.StoreTableMap()
 	fs.closeAllColumnConnections()
-	addTableToList(fs.TableName)
+	AddTableToList(fs.TableName)
 
 	return nil
 }
@@ -128,17 +126,11 @@ func (fs *TableData) closeAllColumnConnections() {
 func (fs *TableData) addDataLine(lineOfData []string, index int) error {
 
 	for i, columnName := range lineOfData {
-		writeInd, err := fs.Columns[i].addData(columnName, index)
+		_, err := fs.Columns[i].addData(columnName, index)
 		if err != nil {
 			return nil
 		}
-
-		fs.MapOfData[index] = append(fs.MapOfData[index], writeInd)
-
 	}
-
-	// TODO
-	//fs.MapOfData[index] = append(fs.MapOfData[index], writeIndexes)
 
 	return nil
 }
