@@ -325,11 +325,7 @@ func main() {
 	// testBTree1()
 	// testBTree2()
 	// testBTree3()
-<<<<<<< HEAD
-	// generateFile(100000, "src/resources/BigData.csv")
-=======
 	generateFile(100000, "src/resources/BigData.csv")
->>>>>>> db7b70e5806be7d56feadf7802ab9090cf9349e3
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleSelectQuery()
 	testTablesData()
