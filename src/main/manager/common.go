@@ -21,7 +21,7 @@ func TableAlreadyExists(tableName string) bool {
 	return false
 }
 
-func AddTableToList(tableName string) error {
+func addTableToList(tableName string) error {
 	if TableAlreadyExists(tableName) {
 		return nil
 	}

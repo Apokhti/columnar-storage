@@ -79,7 +79,7 @@ func (fs *TableData) CreateStructure(tableName, filePath string) error {
 
 	fs.StoreTableMap()
 	fs.closeAllColumnConnections()
-	AddTableToList(fs.TableName)
+	addTableToList(fs.TableName)
 
 	return nil
 }

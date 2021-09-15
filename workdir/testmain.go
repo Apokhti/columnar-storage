@@ -307,8 +307,8 @@ func testSimpleSelectQuery() {
 }
 
 func testTablesData() {
-	manager.AddTableToList("this")
-	manager.AddTableToList("that")
+	// manager.AddTableToList("this")
+	// manager.AddTableToList("that")
 	if !manager.TableAlreadyExists("this") {
 		fmt.Println("error table management not working")
 	}
