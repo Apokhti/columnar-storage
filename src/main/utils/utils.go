@@ -19,3 +19,11 @@ func CreateFileRecursively(filePath string) (*os.File, error) {
 
 	return os.Create(filePath)
 }
+
+// Decides if column with given name exists
+func FileExists(columnPath string) bool {
+	if _, err := os.Stat(columnPath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}

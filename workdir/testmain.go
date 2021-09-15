@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"cs/src/main/btree"
+	"cs/src/main/manager"
 	"cs/src/main/utils"
 	"encoding/csv"
 	"encoding/gob"
@@ -284,6 +285,14 @@ func testSimpleSelectQuery() {
 
 }
 
+func testTablesData() {
+	manager.AddTableToList("this")
+	manager.AddTableToList("that")
+	if !manager.TableAlreadyExists("this") {
+		fmt.Println("error table management not working")
+	}
+}
+
 func main() {
 	// testBTree1()
 	// testBTree2()
@@ -291,11 +300,12 @@ func main() {
 	// generateFile(100000, "src/resources/BigData.csv")
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleIndexQuery()
-	testSimpleSelectQuery()
-	testBTree1()
-	testBTree2()
-	testBTree3()
+	// testSimpleSelectQuery()
+	// testBTree1()
+	// testBTree2()
+	// testBTree3()
 	// generateFile(100000, "src/resources/BigData.csv")
 	// generateFile(100000, "src/resources/BigData.csv")
 	// testSimpleSelectQuery()
+	testTablesData()
 }
