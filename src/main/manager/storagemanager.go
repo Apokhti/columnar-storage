@@ -15,7 +15,7 @@ const buffer_size = 1000
 const maxRecord = 500
 const delimiter = '$'
 const partitionKeyword = "-Partition-"
-const dataPath = "/data/"
+const dataPath = "data"
 const AChar = 65
 
 type VariableType int64
@@ -120,14 +120,13 @@ func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct)
 }
 
 // IndexBy - Creates index by column
-func IndexBy(columnName string, path string, fs TableData, columnType VariableType) {
+func IndexBy(columnName string, path string, tablename string, fs TableData, columnType VariableType) {
 	//TODO yvela
 
 	dirpath, _ := os.Getwd()
-	fmt.Printf("Direcotry %v\n", dirpath)
 
-	os.MkdirAll(dirpath+dataPath+columnName+"-Indexed", os.ModePerm)
-	sortFile(columnName, path, fs.Columns, columnType)
+	os.MkdirAll(dirpath+"/"+dataPath+"/"+tablename+"/"+columnName+"-Indexed", os.ModePerm)
+	sortFile(columnName, path, tablename, fs.Columns, columnType)
 	fs.Indexes = append(fs.Indexes, IndexData{
 		IndexColumnName: columnName,
 		IndexDirPath:    dirpath + dataPath + columnName + "-Indexed",
@@ -142,7 +141,7 @@ func IndexBy(columnName string, path string, fs TableData, columnType VariableTy
 }
 
 // Sorts file by External Sorting
-func sortFile(columnName string, fileName string, columns []ColumnStruct, columnType VariableType) bool {
+func sortFile(columnName string, fileName string, tablename string, columns []ColumnStruct, columnType VariableType) bool {
 	if !fileExists(fileName) {
 		return false
 	}
@@ -161,7 +160,7 @@ func sortFile(columnName string, fileName string, columns []ColumnStruct, column
 		break
 	}
 
-	mergePartitions(columnName, fileName, partitionFilenames, columns, columnType)
+	mergePartitions(columnName, fileName, tablename, partitionFilenames, columns, columnType)
 
 	return true
 }
@@ -308,7 +307,7 @@ func generateNewFilename(stringArr []byte) ([]byte, string) {
 }
 
 // Patition merge code
-func mergePartitions(columnName string, filename string, partitionFilenames []string, columns []ColumnStruct, columnType VariableType) {
+func mergePartitions(columnName string, filename string, tablename string, partitionFilenames []string, columns []ColumnStruct, columnType VariableType) {
 	dirpath, _ := os.Getwd()
 	fmt.Printf("Starting merging: %v dirpath %v\n", partitionFilenames, dirpath)
 
@@ -318,8 +317,7 @@ func mergePartitions(columnName string, filename string, partitionFilenames []st
 		if len(partitionFilenames) == 1 {
 			for i := range columns {
 				filename := columns[i].ColumnFilePath + partitionKeyword + partitionFilenames[0]
-				os.Rename(filename, dirpath+dataPath+columnName+"-Indexed/"+columns[i].ColumnName)
-
+				os.Rename(filename, dirpath+"/"+dataPath+"/"+tablename+"/"+columnName+"-Indexed/"+columns[i].ColumnName)
 			}
 			break
 		}
