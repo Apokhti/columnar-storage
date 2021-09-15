@@ -72,7 +72,7 @@ func main() {
 
 	inputCSV()
 	// server.ServeRequests(fs)
-	manager.IndexBy("Name", "data/myFile/"+"Name", fs, manager.IntType)
+	manager.IndexBy("Email", "data/myFile/"+"Email", fs, manager.IntType)
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)
 	// for {
@@ -83,4 +83,5 @@ func main() {
 	// 	}
 
 	// }
+
 }
