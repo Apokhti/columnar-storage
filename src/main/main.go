@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"cs/src/main/manager"
@@ -48,17 +47,18 @@ func main() {
 	// 	break
 	// }
 
-	for ind, fileName := range os.Args {
-		if ind == 0 {
-			continue
-		}
-		fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
-		readCSV(fileName)
-	}
+	// for ind, fileName := range os.Args {
+	// 	if ind == 0 {
+	// 		continue
+	// 	}
+	// 	fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
+	// 	readCSV(fileName)
+	// }
 	// server.ServeRequests(fs)
 	// manager.IndexBy("id", "data/BigData/"+"id", fs, manager.IntType)
 	// }
-	manager.IndexBy("id", "data/myFile/"+"id", "myFile", fs, manager.IntType)
+	// manager.IndexBy("id", "data/myFile/"+"id", "myFile", fs, manager.IntType)
+	manager.LoadTable("myFile")
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)
 	// for {
