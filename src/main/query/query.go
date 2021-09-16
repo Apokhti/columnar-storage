@@ -12,6 +12,7 @@ type Query struct {
 	Table                 string
 	SelectExpressionsList []Expression
 	WhereExpressionList   []Expression
+	WhereExpression       string
 	Orderby               []Expression
 }
 

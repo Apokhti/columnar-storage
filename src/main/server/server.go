@@ -19,6 +19,7 @@ const (
 	connType = "tcp"
 )
 
+// ServeRequests -> recieves requests
 func ServeRequests(fs manager.TableData) {
 
 	fmt.Println("Starting DATABASE " + connHost + ":" + connPort)
@@ -38,7 +39,6 @@ func handleConnection(conn net.Conn, fs manager.TableData) {
 	buffer, err := bufio.NewReader(conn).ReadBytes('\n')
 
 	if err != nil {
-		fmt.Printf("err %v\n", err)
 		conn.Close()
 		return
 	}

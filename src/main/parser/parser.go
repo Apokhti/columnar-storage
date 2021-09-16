@@ -77,6 +77,7 @@ func (p *parser) parseQuery() (query.Query, error) {
 			p.query.Table = table
 			token := p.peekNextToken()
 			if strings.ToUpper(token) == "WHERE" {
+				p.query.WhereExpression = ""
 				p.step = stepWhereExpression
 			} else {
 				p.step = stepEnd
@@ -88,7 +89,12 @@ func (p *parser) parseQuery() (query.Query, error) {
 				p.step = stepOrderbyExpression
 				p.query.WhereExpressionList = append(p.query.WhereExpressionList, currentExpresion)
 				currentExpresion = query.Expression{}
-			} else if strings.ToUpper(token) == "AND" {
+			} else if strings.ToUpper(token) == "AND" || strings.ToUpper(token) == "OR" {
+				if strings.ToUpper(token) == "AND" {
+					p.query.WhereExpression += " & "
+				} else {
+					p.query.WhereExpression += " | "
+				}
 				p.query.WhereExpressionList = append(p.query.WhereExpressionList, currentExpresion)
 				currentExpresion = query.Expression{}
 			} else if strings.ToUpper(token) == ";" {
@@ -96,6 +102,7 @@ func (p *parser) parseQuery() (query.Query, error) {
 				currentExpresion = query.Expression{}
 				p.step = stepEnd
 			} else {
+				p.query.WhereExpression += token
 				query.AddValueToExpression(&currentExpresion, token)
 			}
 

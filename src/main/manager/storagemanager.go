@@ -517,7 +517,6 @@ func siftDown(heap []string, columnType VariableType, lo, hi int) {
 		} else {
 			break
 		}
-
 	}
 }
 

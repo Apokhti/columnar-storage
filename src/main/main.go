@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"cs/src/main/manager"
+	"cs/src/main/server"
 )
 
 var fs manager.TableData
@@ -27,26 +28,6 @@ func readCSV(fileName string) {
 }
 
 func main() {
-	// query_str := "select my_file, bla from base where myfile < d ;"
-	// // fmt.Printf("%s\n", query_str)
-	// // parser.PrintTokens(query_str)
-	// q, _ := parser.Parse(query_str)
-	// q.PrintQuery()
-	// fmt.Printf("Expression to calculate %v\n", q.SelectExpressionsList[1])
-	// mp := make(map[string]interface{}, 10)
-	// mp["bla"] = 1
-	// mp["blu"] = 100
-	// result, _ := query.CalculateSelectExpression(q.SelectExpressionsList[1], mp)
-	// fmt.Printf("Result %v\n", result)
-	// fs = manager.TableData{}
-	// for {
-	// 	command := getCommand()
-	// 	if command == "1" {
-	// 	} else if command == "2" {
-	// 		// inputQuerry()
-	// 	}
-	// 	break
-	// }
 
 	for ind, fileName := range os.Args {
 		if ind == 0 {
@@ -55,19 +36,6 @@ func main() {
 		fmt.Printf("arg ind: %v, value: %v\n", ind, fileName)
 		readCSV(fileName)
 	}
-	// server.ServeRequests(fs)
-	// manager.IndexBy("id", "data/BigData/"+"id", fs, manager.IntType)
-	// }
-	manager.IndexBy("id", "data/myFile/"+"id", "myFile", fs, manager.IntType)
-	// f, _ := os.Open("data/myFile/ID")
-	// reader := manager.NewRecordReader(f)
-	// for {
-	// 	next, err := reader.NextRecordBuffered()
-	// 	// fmt.Printf("%v nnn\n", next)
-	// 	if err == io.EOF {
-	// 		break
-	// 	}
 
-	// }
-
+	server.ServeRequests(fs)
 }

@@ -1,9 +1,9 @@
 package query
 
 import (
-	"bufio"
 	"cs/src/main/manager"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +17,7 @@ func ExecuteQuery(td *manager.TableData, query *Query) []interface{} {
 	// fmt.Printf("%v Expression\n", firstExpr)
 	variables := variablesToSelect(query.SelectExpressionsList)
 	fmt.Printf("%v\n", variables)
-	result := filterResults(td, variables, query.SelectExpressionsList, query.WhereExpressionList)
+	result := filterResults(td, variables, query.SelectExpressionsList, query.WhereExpressionList, query.WhereExpression)
 	return result
 }
 
@@ -29,63 +29,113 @@ func variablesToSelect(selectExpressions []Expression) []string {
 	return variables
 }
 
-func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression) []interface{} {
-	resultSlice := []interface{}{}
-	dirpath, _ := os.Getwd()
-
-	for _, filterExpression := range filterExpressions {
-		indexed := checkIfIndexed(filterExpression.ExpressionColumns)
-		fmt.Printf(" indexed %v\n", indexed)
-		if !indexed {
-			return resultSlice
-		}
-
-		files := make([]*os.File, len(fs.Columns))
-		readers := make([]*bufio.Reader, len(fs.Columns))
-
-		for i, column := range fs.Columns {
-			files[i], _ = os.Open(dirpath + "/data/" + filterExpression.ExpressionColumns[0] + "-Indexed/" + column.ColumnName)
-			readers[i] = bufio.NewReader(files[i])
-		}
-
-		for {
-			records := manager.NextRecords(readers)
-			if records[0] == "" {
-				break
-			}
-			mp := createRowMap(records, fs)
-			// fmt.Printf("mp %v\n", mp)
-
-			result, _ := CalculateSelectExpression(filterExpression, mp)
-			converted := fmt.Sprintf("%v", result)
-			row := []interface{}{}
-			if converted == "true" {
-				for _, selectExpression := range selectExpressions {
-					result, _ := CalculateSelectExpression(selectExpression, mp)
-					row = append(row, result)
-				}
-				// for _, variable := range variables {
-				// 	row = append(row, mp[variable])
-				// }
-				resultSlice = append(resultSlice, row)
-				fmt.Printf("%v \n", row)
-			}
-
-		}
-
-		break
-
+func splitRecordIndex(record string) (string, int64) {
+	if !strings.Contains(record, ")") {
+		return "", -1
 	}
+
+	recordRes := record[strings.Index(record, ")")+1:]
+	index := record[:strings.Index(record, ")")]
+	inInt, _ := strconv.Atoi(index)
+	return recordRes, int64(inInt)
+
+}
+
+func satisfiesExpression(record string, column string, filterExpression Expression, columnType manager.VariableType) bool {
+	mp := map[string]interface{}{}
+	if columnType == manager.IntType {
+		recordInt, _ := strconv.Atoi(record)
+		mp[column] = recordInt
+	} else {
+		mp[column] = record
+	}
+	result, _ := CalculateSelectExpression(filterExpression, mp)
+	return fmt.Sprintf("%v", result) == "true"
+}
+
+func getIndices(column string, file *os.File, filterExpression Expression, columnType manager.VariableType) map[int64]bool {
+	result := map[int64]bool{}
+	reader := manager.NewRecordReader(file)
+	for {
+		curRecord, err, _ := reader.NextRecordBuffered()
+		if err == io.EOF {
+			break
+		}
+		record, index := splitRecordIndex(curRecord)
+		if satisfiesExpression(record, column, filterExpression, columnType) {
+			result[index] = true
+		}
+	}
+	return result
+}
+
+func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, whereExpression string) []interface{} {
+	resultSlice := []interface{}{}
+	fmt.Printf("%v\n", whereExpression)
+
+	for _, filterExpr := range filterExpressions {
+		columnName := filterExpr.ExpressionColumns[0]
+		f, _ := os.Open(fs.TableDirPath + columnName)
+		indices := getIndices(columnName, f, filterExpr, manager.IntType)
+		fmt.Printf("%v \n", indices)
+	}
+
 	return resultSlice
 }
 
+func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression, whereExpression string) []interface{} {
+	resultSlice := []interface{}{}
+
+	filteredResult := filterNotIndexed(fs, filterExpressions, whereExpression)
+	fmt.Printf("%v\n", filteredResult)
+
+	// dirpath, _ := os.Getwd()
+	// tableName := fs.TableName
+
+	// files := make([]*os.File, len(fs.Columns))
+	// readers := make([]*bufio.Reader, len(fs.Columns))
+
+	// for i, column := range fs.Columns {
+	// 	files[i], _ = os.Open(dirpath + "/data/" + filterExpression.ExpressionColumns[0] + "-Indexed/" + column.ColumnName)
+	// 	readers[i] = bufio.NewReader(files[i])
+	// }
+
+	// for {
+	// 	records := manager.NextRecords(readers)
+	// 	if records[0] == "" {
+	// 		break
+	// 	}
+	// 	mp := createRowMap(records, fs)
+	// 	// fmt.Printf("mp %v\n", mp)
+
+	// 	result, _ := CalculateSelectExpression(filterExpression, mp)
+	// 	converted := fmt.Sprintf("%v", result)
+	// 	row := []interface{}{}
+	// 	if converted == "true" {
+	// 		for _, selectExpression := range selectExpressions {
+	// 			result, _ := CalculateSelectExpression(selectExpression, mp)
+	// 			row = append(row, result)
+	// 		}
+	// 		// for _, variable := range variables {
+	// 		// 	row = append(row, mp[variable])
+	// 		// }
+	// 		resultSlice = append(resultSlice, row)
+	// 		fmt.Printf("%v \n", row)
+	// 	}
+
+	// }
+	return resultSlice
+}
+
+// Ceates Column -> Value map for Result
 func createRowMap(records []string, fs *manager.TableData) map[string]interface{} {
 	result := map[string]interface{}{}
 	for i, column := range fs.Columns {
 		record := records[i][strings.Index(records[i], ")")+1:]
+		// Needs revision
 		if column.ColumnName == "ID" {
-			i, _ := strconv.Atoi(record)
-			result[column.ColumnName] = i
+			inInt, _ := strconv.Atoi(record)
+			result[column.ColumnName] = inInt
 		} else {
 			result[column.ColumnName] = record
 		}
@@ -93,9 +143,11 @@ func createRowMap(records []string, fs *manager.TableData) map[string]interface{
 	return result
 }
 
-func checkIfIndexed(column []string) bool {
+// Needs revision
+func checkIfIndexed(table string, column string) bool {
 	dirpath, _ := os.Getwd()
-	path := dirpath + "/data/" + column[0] + "-Indexed"
+	path := dirpath + "/data/" + table + "/" + column + "-Indexed"
+	fmt.Printf("%v path", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}
