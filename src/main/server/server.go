@@ -74,9 +74,9 @@ func handleQuery(fullquery string, fs manager.TableData) string {
 func handleIndexBy(column string, fs manager.TableData, indexType string) bool {
 
 	if indexType == "STRING" {
-		manager.IndexBy(column, "data/myFile/"+column, fs, manager.StringType)
+		manager.IndexBy(column, "data/myFile/"+column, fs.TableName, fs, manager.StringType)
 	} else if indexType == "INT" {
-		manager.IndexBy(column, "data/myFile/"+column, fs, manager.IntType)
+		manager.IndexBy(column, "data/myFile/"+column, fs.TableName, fs, manager.IntType)
 	}
 	return true
 }

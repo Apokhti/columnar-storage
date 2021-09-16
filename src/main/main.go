@@ -58,7 +58,7 @@ func main() {
 	// server.ServeRequests(fs)
 	// manager.IndexBy("id", "data/BigData/"+"id", fs, manager.IntType)
 	// }
-	manager.IndexBy("id", "data/myFile/"+"id", "myFile", fs, manager.StringType)
+	manager.IndexBy("id", "data/myFile/"+"id", "myFile", fs, manager.IntType)
 	// f, _ := os.Open("data/myFile/ID")
 	// reader := manager.NewRecordReader(f)
 	// for {

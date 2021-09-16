@@ -60,20 +60,18 @@ func ListAllColumns(path string) []string {
 func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct) error {
 	var filesReaderMap map[string]*RecordReader = make(map[string]*RecordReader)
 	var filesTreeMap map[string]*btree.Tree = make(map[string]*btree.Tree)
-	var filesOffsetMap map[string]int64 = make(map[string]int64)
 
-	for _, name := range *columns {
-		file, err := os.Open(indexDirPath + "/" + name.ColumnName)
+	for _, column := range *columns {
+		file, err := os.Open(indexDirPath + "/" + column.ColumnName)
 		if err != nil {
 			return err
 		}
-		filesReaderMap[name.ColumnName] = NewRecordReader(file)
-		tree, err := btree.CreateTree(indexDirPath + "/" + name.ColumnName + ".idx")
+		filesReaderMap[column.ColumnName] = NewRecordReader(file)
+		tree, err := btree.CreateTree(indexDirPath + "/" + column.ColumnName + ".idx")
 		if err != nil {
 			return err
 		}
-		filesTreeMap[name.ColumnName] = tree
-		filesOffsetMap[name.ColumnName] = 0
+		filesTreeMap[column.ColumnName] = tree
 	}
 
 	for {
@@ -96,7 +94,7 @@ func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct)
 			if column.ColumnName == indexColumn {
 				continue
 			}
-			_, err, offset = filesReaderMap[indexColumn].NextRecordBuffered()
+			_, err, offset = filesReaderMap[column.ColumnName].NextRecordBuffered()
 
 			if err != nil {
 				return err
@@ -118,14 +116,15 @@ func IndexBy(columnName string, path string, tablename string, fs TableData, col
 
 	dirpath, _ := os.Getwd()
 
-	os.MkdirAll(dirpath+"/"+dataPath+"/"+tablename+"/"+columnName+"-Indexed", os.ModePerm)
+	indexDir := dirpath + "/" + dataPath + "/" + tablename + "/" + columnName + "-Indexed"
+	os.MkdirAll(indexDir, os.ModePerm)
 	sortFile(columnName, path, tablename, fs.Columns, columnType)
 	fs.Indexes = append(fs.Indexes, IndexData{
 		IndexColumnName: columnName,
-		IndexDirPath:    dirpath + dataPath + columnName + "-Indexed",
+		IndexDirPath:    indexDir,
 	})
 
-	// makeBTree(columnName, dirpath+dataPath+columnName+"-Indexed/", &fs.Columns)
+	makeBTree(columnName, indexDir, &fs.Columns)
 
 	err := fs.StoreTableMap()
 	if err != nil {
