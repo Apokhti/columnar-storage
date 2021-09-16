@@ -8,10 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
 const DATA_FILE_PATH = "data/"
+
+const TABLE_INFO_FILE_NAME = "TableInfo.json"
 
 type SingleValue struct {
 	VirtualId int64
@@ -38,7 +41,6 @@ type ColumnStruct struct {
 	File           *os.File      `json:"-"`
 	Tree           *btree.Tree   `json:"-"`
 	OutStream      *bufio.Writer `json:"-"`
-	ReadStram      *bufio.Reader `json:"-"`
 }
 
 // Creates CSV structure
@@ -91,7 +93,7 @@ func (fs *TableData) StoreTableMap() error {
 		return err
 	}
 
-	file, err := utils.CreateFileRecursively(DATA_FILE_PATH + "/" + fs.TableName + "/DataBaseMap.json")
+	file, err := utils.CreateFileRecursively(DATA_FILE_PATH + "/" + fs.TableName + "/" + TABLE_INFO_FILE_NAME)
 	if err != nil {
 		return err
 	}
@@ -135,6 +137,16 @@ func (fs *TableData) addDataLine(lineOfData []string, index int) error {
 	return nil
 }
 
+func (fs *TableData) loadColumnTrees() error {
+	for i := 0; i < len(fs.Columns); i++ {
+		err := fs.Columns[i].loadTree()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 /*
 //	columnName = tableName + _ + columnName
 //
@@ -159,6 +171,16 @@ func (columnStruct *ColumnStruct) createColumnsStruct(columnSaveFilePath string,
 	return nil
 }
 
+func (columnStruct *ColumnStruct) loadTree() error {
+	tree, err := btree.LoadTree(columnStruct.ColumnFilePath + ".idx")
+	if err != nil {
+		return err
+	}
+
+	columnStruct.Tree = tree
+	return nil
+}
+
 // Saves data at given index.
 // Returns index at file and error writing file.
 func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error) {
@@ -175,4 +197,32 @@ func (columnStruct *ColumnStruct) addData(data string, index int) (int64, error)
 
 	err = columnStruct.Tree.InsertValue(int64(index), writeInd)
 	return writeInd, err
+}
+
+func LoadTable(tableName string) (*TableData, error) {
+	var table TableData
+	var err error
+
+	if !TableAlreadyExists(tableName) {
+		return nil, fmt.Errorf("Table does not exist!")
+	}
+	tableInfoPath := DATA_FILE_PATH + "/" + tableName + "/" + TABLE_INFO_FILE_NAME
+
+	infoFile, err := os.Open(tableInfoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := ioutil.ReadAll(infoFile)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, &table)
+	if err != nil {
+		return nil, err
+	}
+
+	table.loadColumnTrees()
+	return &table, nil
 }
