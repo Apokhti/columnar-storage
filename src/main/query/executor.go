@@ -71,7 +71,7 @@ func getIndices(column string, file *os.File, filterExpression Expression, colum
 	return result
 }
 
-func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, whereExpression string, variables []string) map[int64][]interface{} {
+func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, selectExpressions []Expression, whereExpression string, variables []string) map[int64][]interface{} {
 	result := map[int64][]interface{}{}
 	fmt.Printf("%v\n", filterExpressions)
 	indicesArr := make([]map[int64]bool, 10)
@@ -85,15 +85,15 @@ func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, whe
 	// Boolean Algebra needed
 	joined := utils.SetIntersection(indicesArr[0], indicesArr[1])
 	fmt.Printf("%v joined\n", joined)
-	for _, variable := range variables {
+	for i, variable := range variables {
 		f, _ := os.Open(fs.TableDirPath + variable)
-		getResultSet(f, joined, result)
+		getResultSet(f, joined, result, selectExpressions[i])
 	}
 
 	return result
 }
 
-func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]interface{}) {
+func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]interface{}, expr Expression) {
 	reader := manager.NewRecordReader(file)
 	for {
 		curRecord, err, _ := reader.NextRecordBuffered()
@@ -105,7 +105,17 @@ func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]inte
 			if len(result[index]) == 0 {
 				result[index] = make([]interface{}, 0)
 			}
-			result[index] = append(result[index], record)
+
+			// NEEDS CHANGE
+			if expr.ExpressionColumns[0] == expr.Fullexpression {
+				result[index] = append(result[index], record)
+			} else {
+				mp := map[string]interface{}{}
+				inInt, _ := strconv.Atoi(record)
+				mp[expr.ExpressionColumns[0]] = inInt
+				recordRes, _ := CalculateSelectExpression(expr, mp)
+				result[index] = append(result[index], recordRes)
+			}
 		}
 	}
 
@@ -113,7 +123,7 @@ func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]inte
 
 func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression, whereExpression string) map[int64][]interface{} {
 
-	filteredResult := filterNotIndexed(fs, filterExpressions, whereExpression, variables)
+	filteredResult := filterNotIndexed(fs, filterExpressions, selectExpressions, whereExpression, variables)
 	fmt.Printf("%v\n", filteredResult)
 	return filteredResult
 
