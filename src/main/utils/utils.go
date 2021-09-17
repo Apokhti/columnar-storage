@@ -27,3 +27,28 @@ func FileExists(columnPath string) bool {
 	}
 	return true
 }
+
+// SetUnion unions
+func SetUnion(s1 map[int64]bool, s2 map[int64]bool) map[int64]bool {
+	s_union := map[int64]bool{}
+	for k, _ := range s1 {
+		s_union[k] = true
+	}
+	for k, _ := range s2 {
+		s_union[k] = true
+	}
+	return s_union
+}
+
+func SetIntersection(s1 map[int64]bool, s2 map[int64]bool) map[int64]bool {
+	s_intersection := map[int64]bool{}
+	if len(s1) > len(s2) {
+		s1, s2 = s2, s1 // better to iterate over a shorter set
+	}
+	for k, _ := range s1 {
+		if s2[k] {
+			s_intersection[k] = true
+		}
+	}
+	return s_intersection
+}

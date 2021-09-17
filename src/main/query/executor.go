@@ -2,6 +2,7 @@ package query
 
 import (
 	"cs/src/main/manager"
+	"cs/src/main/utils"
 	"fmt"
 	"io"
 	"os"
@@ -10,7 +11,7 @@ import (
 )
 
 // ExecuteQuerry Main stuff
-func ExecuteQuery(td *manager.TableData, query *Query) []interface{} {
+func ExecuteQuery(td *manager.TableData, query *Query) map[int64]interface{} {
 	// List of expressions
 	// filterExpressions := query.WhereExpressionList
 	// firstExpr := filterExpressions[0]
@@ -66,27 +67,53 @@ func getIndices(column string, file *os.File, filterExpression Expression, colum
 			result[index] = true
 		}
 	}
+
 	return result
 }
 
-func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, whereExpression string) []interface{} {
-	resultSlice := []interface{}{}
-	fmt.Printf("%v\n", whereExpression)
+func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, whereExpression string, variables []string) map[int64][]interface{} {
+	result := map[int64][]interface{}{}
+	fmt.Printf("%v\n", filterExpressions)
+	indicesArr := make([]map[int64]bool, 10)
 
-	for _, filterExpr := range filterExpressions {
+	for i, filterExpr := range filterExpressions {
 		columnName := filterExpr.ExpressionColumns[0]
 		f, _ := os.Open(fs.TableDirPath + columnName)
-		indices := getIndices(columnName, f, filterExpr, manager.IntType)
-		fmt.Printf("%v \n", indices)
+		indicesArr[i] = getIndices(columnName, f, filterExpr, manager.IntType)
+	}
+	joined := utils.SetIntersection(indicesArr[0], indicesArr[1])
+	fmt.Printf("%v joined\n", joined)
+	for _, variable := range variables {
+		f, _ := os.Open(fs.TableDirPath + variable)
+		getResultSet(f, joined, result)
 	}
 
-	return resultSlice
+	return result
 }
 
-func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression, whereExpression string) []interface{} {
-	resultSlice := []interface{}{}
+func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]interface{}) {
+	reader := manager.NewRecordReader(file)
+	for {
+		curRecord, err, _ := reader.NextRecordBuffered()
+		if err == io.EOF {
+			break
+		}
+		record, index := splitRecordIndex(curRecord)
+		if indices[index] == true {
 
-	filteredResult := filterNotIndexed(fs, filterExpressions, whereExpression)
+			if len(result[index]) == 0 {
+				result[index] = make([]interface{}, 0)
+			}
+			result[index] = append(result[index], record)
+		}
+	}
+
+}
+
+func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression, whereExpression string) map[int64]interface{} {
+	resultSlice := map[int64]interface{}{}
+
+	filteredResult := filterNotIndexed(fs, filterExpressions, whereExpression, variables)
 	fmt.Printf("%v\n", filteredResult)
 
 	// dirpath, _ := os.Getwd()

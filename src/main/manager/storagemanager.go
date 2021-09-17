@@ -111,7 +111,7 @@ func makeBTree(indexColumn string, indexDirPath string, columns *[]ColumnStruct)
 }
 
 // IndexBy - Creates index by column
-func IndexBy(columnName string, path string, tablename string, fs TableData, columnType VariableType) {
+func IndexBy(columnName string, path string, tablename string, fs *TableData, columnType VariableType) {
 	//TODO yvela
 
 	dirpath, _ := os.Getwd()

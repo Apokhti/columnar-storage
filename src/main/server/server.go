@@ -20,7 +20,7 @@ const (
 )
 
 // ServeRequests -> recieves requests
-func ServeRequests(fs manager.TableData) {
+func ServeRequests(fs *manager.TableData) {
 
 	fmt.Println("Starting DATABASE " + connHost + ":" + connPort)
 	l, _ := net.Listen(connType, connHost+":"+connPort)
@@ -35,7 +35,7 @@ func ServeRequests(fs manager.TableData) {
 }
 
 // Client Connected time to shine!
-func handleConnection(conn net.Conn, fs manager.TableData) {
+func handleConnection(conn net.Conn, fs *manager.TableData) {
 	buffer, err := bufio.NewReader(conn).ReadBytes('\n')
 
 	if err != nil {
@@ -52,7 +52,7 @@ func handleConnection(conn net.Conn, fs manager.TableData) {
 }
 
 // Main method for handling client query
-func handleQuery(fullquery string, fs manager.TableData) string {
+func handleQuery(fullquery string, fs *manager.TableData) string {
 	// fmt.Printf("Query %v\n", fullquery)
 	tokens := parser.FullTokenize(fullquery)
 	if strings.ToUpper(tokens[0]) == "INDEX" && strings.ToUpper(tokens[1]) == "BY" {
@@ -67,11 +67,11 @@ func handleQuery(fullquery string, fs manager.TableData) string {
 
 	} else {
 		q, _ := parser.Parse(fullquery)
-		return fmt.Sprintf("%v\n", query.ExecuteQuery(&fs, &q))
+		return fmt.Sprintf("%v\n", query.ExecuteQuery(fs, &q))
 	}
 }
 
-func handleIndexBy(column string, fs manager.TableData, indexType string) bool {
+func handleIndexBy(column string, fs *manager.TableData, indexType string) bool {
 
 	if indexType == "STRING" {
 		manager.IndexBy(column, "data/myFile/"+column, fs.TableName, fs, manager.StringType)
