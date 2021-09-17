@@ -296,7 +296,7 @@ func testSimpleIndexQuery() {
 func testSimpleSelectQuery() {
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
 
-	text := "select (ID*2)+7, Email, RandInt from base where ID <  104 and ID > 99;"
+	text := "select ID, Email, RandInt from base where ID+2 == 625;"
 	// send to server
 	fmt.Fprintf(conn, text+"\n")
 

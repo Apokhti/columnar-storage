@@ -71,19 +71,38 @@ func getIndices(column string, file *os.File, filterExpression Expression, colum
 	return result
 }
 
+// We need to use it as a queue
+func removeIndex(s []map[int64]bool, index int) []map[int64]bool {
+	return append(s[:index], s[index+1:]...)
+}
+
+func getFinalIndices(indicesArr []map[int64]bool, filterExpressions []Expression) map[int64]bool {
+	for {
+		if len(indicesArr) == 1 {
+			return indicesArr[0]
+		}
+
+		arr1, arr2 := indicesArr[0], indicesArr[1]
+		joined := utils.SetIntersection(arr1, arr2)
+		indicesArr = append(indicesArr, joined)
+		indicesArr = removeIndex(indicesArr, 0)
+		indicesArr = removeIndex(indicesArr, 0)
+	}
+}
+
 func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, selectExpressions []Expression, whereExpression string, variables []string) map[int64][]interface{} {
 	result := map[int64][]interface{}{}
 	fmt.Printf("%v\n", filterExpressions)
-	indicesArr := make([]map[int64]bool, 10)
+	indicesArr := []map[int64]bool{}
 
-	for i, filterExpr := range filterExpressions {
+	for _, filterExpr := range filterExpressions {
 		columnName := filterExpr.ExpressionColumns[0]
 		f, _ := os.Open(fs.TableDirPath + columnName)
-		indicesArr[i] = getIndices(columnName, f, filterExpr, manager.IntType)
+		indicesArr = append(indicesArr, getIndices(columnName, f, filterExpr, manager.IntType))
 	}
 
 	// Boolean Algebra needed
-	joined := utils.SetIntersection(indicesArr[0], indicesArr[1])
+	joined := getFinalIndices(indicesArr, filterExpressions)
 	fmt.Printf("%v joined\n", joined)
 	for i, variable := range variables {
 		f, _ := os.Open(fs.TableDirPath + variable)
