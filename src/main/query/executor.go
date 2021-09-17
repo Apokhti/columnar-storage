@@ -11,7 +11,7 @@ import (
 )
 
 // ExecuteQuerry Main stuff
-func ExecuteQuery(td *manager.TableData, query *Query) map[int64]interface{} {
+func ExecuteQuery(td *manager.TableData, query *Query) map[int64][]interface{} {
 	// List of expressions
 	// filterExpressions := query.WhereExpressionList
 	// firstExpr := filterExpressions[0]
@@ -81,6 +81,8 @@ func filterNotIndexed(fs *manager.TableData, filterExpressions []Expression, whe
 		f, _ := os.Open(fs.TableDirPath + columnName)
 		indicesArr[i] = getIndices(columnName, f, filterExpr, manager.IntType)
 	}
+
+	// Boolean Algebra needed
 	joined := utils.SetIntersection(indicesArr[0], indicesArr[1])
 	fmt.Printf("%v joined\n", joined)
 	for _, variable := range variables {
@@ -100,7 +102,6 @@ func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]inte
 		}
 		record, index := splitRecordIndex(curRecord)
 		if indices[index] == true {
-
 			if len(result[index]) == 0 {
 				result[index] = make([]interface{}, 0)
 			}
@@ -110,11 +111,11 @@ func getResultSet(file *os.File, indices map[int64]bool, result map[int64][]inte
 
 }
 
-func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression, whereExpression string) map[int64]interface{} {
-	resultSlice := map[int64]interface{}{}
+func filterResults(fs *manager.TableData, variables []string, selectExpressions []Expression, filterExpressions []Expression, whereExpression string) map[int64][]interface{} {
 
 	filteredResult := filterNotIndexed(fs, filterExpressions, whereExpression, variables)
 	fmt.Printf("%v\n", filteredResult)
+	return filteredResult
 
 	// dirpath, _ := os.Getwd()
 	// tableName := fs.TableName
@@ -151,7 +152,6 @@ func filterResults(fs *manager.TableData, variables []string, selectExpressions 
 	// 	}
 
 	// }
-	return resultSlice
 }
 
 // Ceates Column -> Value map for Result
